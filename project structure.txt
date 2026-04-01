@@ -1,0 +1,6 @@
+Cấu trúc project game_analytics_pipeline/:
+1. Data Ingestion (src/ingestion/) — AppsFlyer Pull API client với retry logic, Data Locker GCS loader, BigQuery raw table loader với auto-dedup và schema management.
+2. Data Transformation (src/transformation/) — 14 SQL transforms chia 3 tầng: Raw → Staging (clean, dedup), Staging → Warehouse (star schema với fact_events, fact_sessions, fact_revenue, dim_users, dim_campaigns), Warehouse → Data Marts (7 marts cho KPIs, retention cohorts, revenue, UA campaigns, player segments, sessions, level funnel).
+3. ML Pipeline (src/ml/) — Feature engineering (35+ features: activity, engagement, monetary, progression, trends), XGBoost churn prediction model với cross-validation, và RFM-based player segmentation (whale/dolphin/minnow/engaged_free/casual/at_risk/churned).
+4. Dashboard Queries (src/dashboards/) — 15+ SQL queries sẵn sàng paste vào Google Data Studio cho 3 dashboards: Product Overview, Revenue & Monetization, UA & Marketing, cộng thêm Churn Prediction dashboard.
+5. Deployment (deploy/) — Cloud Function entry points và Cloud Scheduler setup script cho automated daily/weekly pipeline.
