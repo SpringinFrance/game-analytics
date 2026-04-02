@@ -102,7 +102,7 @@ class ChurnPredictor:
         feature_columns = get_feature_columns()
 
         # Encode categorical features
-        categorical_cols = ["platform", "country"]
+        categorical_cols = ["platform", "geo_country"]
         for col in categorical_cols:
             if col in df.columns:
                 le = LabelEncoder()
@@ -367,6 +367,8 @@ class ChurnPredictor:
 
     def _log_model_metadata(self, client):
         """Log model training metadata to BigQuery."""
+        from google.cloud import bigquery
+
         metadata = pd.DataFrame([{
             "model_version": self._get_model_version(),
             "model_type": "xgboost",

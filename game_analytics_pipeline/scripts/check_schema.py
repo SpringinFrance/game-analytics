@@ -20,7 +20,7 @@ def check_schema_mismatch(project_id, dataset_id, table_name, python_columns):
     extra_in_bq = bq_columns - python_cols_set    # Có trên BQ, không có trong code
 
     # 4. Show kết quả
-    print("-" * 50)
+    print("-" * 50) 
     print(f"BÁO CÁO LỆCH SCHEMA CHO BẢNG: {table_id}")
     print("-" * 50)
     

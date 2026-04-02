@@ -46,8 +46,6 @@ def staging_events(project_id: str) -> str:
     """Clean and deduplicate raw events."""
     return f"""
     CREATE OR REPLACE TABLE `{project_id}.game_staging.stg_events`
-    PARTITION BY event_date
-    CLUSTER BY event_name, platform, geo_country
     AS
     SELECT
         -- Unique event ID
@@ -65,7 +63,6 @@ def staging_events(project_id: str) -> str:
         user_pseudo_id,
         COALESCE(user_id, user_pseudo_id) AS user_id,
         user_first_touch_timestamp,
-        is_active_user,
 
         -- Event
         event_date,
@@ -122,8 +119,6 @@ def staging_sessions(project_id: str) -> str:
     """Build session-level aggregations from events using session_start events and 30-min gap logic."""
     return f"""
     CREATE OR REPLACE TABLE `{project_id}.game_staging.stg_sessions`
-    PARTITION BY session_date
-    CLUSTER BY platform, geo_country
     AS
     WITH event_gaps AS (
         SELECT
@@ -206,7 +201,6 @@ def dim_dates(project_id: str) -> str:
 def dim_users(project_id: str) -> str:
     return f"""
     CREATE OR REPLACE TABLE `{project_id}.game_warehouse.dim_users`
-    CLUSTER BY platform, geo_country
     AS
     WITH first_events AS (
         SELECT
@@ -292,8 +286,6 @@ def dim_users(project_id: str) -> str:
 def fact_events(project_id: str) -> str:
     return f"""
     CREATE OR REPLACE TABLE `{project_id}.game_warehouse.fact_events`
-    PARTITION BY event_date
-    CLUSTER BY event_name, platform, geo_country
     AS
     SELECT
         event_id,
@@ -320,8 +312,6 @@ def fact_events(project_id: str) -> str:
 def fact_sessions(project_id: str) -> str:
     return f"""
     CREATE OR REPLACE TABLE `{project_id}.game_warehouse.fact_sessions`
-    PARTITION BY session_date
-    CLUSTER BY platform, geo_country
     AS
     SELECT * FROM `{project_id}.game_staging.stg_sessions`
     """
@@ -330,7 +320,6 @@ def fact_sessions(project_id: str) -> str:
 def fact_revenue(project_id: str) -> str:
     return f"""
     CREATE OR REPLACE TABLE `{project_id}.game_warehouse.fact_revenue`
-    PARTITION BY event_date
     AS
     SELECT
         event_id,
@@ -361,7 +350,6 @@ def fact_levels(project_id: str) -> str:
     """Gaming-specific: level progression facts."""
     return f"""
     CREATE OR REPLACE TABLE `{project_id}.game_warehouse.fact_levels`
-    PARTITION BY event_date
     AS
     SELECT
         event_id,
@@ -401,7 +389,6 @@ def fact_levels(project_id: str) -> str:
 def mart_daily_kpis(project_id: str) -> str:
     return f"""
     CREATE OR REPLACE TABLE `{project_id}.game_marts.mart_daily_kpis`
-    PARTITION BY date
     AS
     WITH daily_active AS (
         SELECT
@@ -529,7 +516,6 @@ def mart_retention_cohorts(project_id: str) -> str:
 def mart_revenue_daily(project_id: str) -> str:
     return f"""
     CREATE OR REPLACE TABLE `{project_id}.game_marts.mart_revenue_daily`
-    PARTITION BY date
     AS
     SELECT
         event_date AS date,
@@ -596,7 +582,6 @@ def mart_player_segments(project_id: str) -> str:
 def mart_session_stats(project_id: str) -> str:
     return f"""
     CREATE OR REPLACE TABLE `{project_id}.game_marts.mart_session_stats`
-    PARTITION BY date
     AS
     SELECT
         session_date AS date,

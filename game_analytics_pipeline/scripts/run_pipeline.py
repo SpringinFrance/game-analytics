@@ -146,7 +146,7 @@ def step_ml(project_id):
     from src.ml.churn_model import ChurnPredictor
     from src.ml.segmentation import PlayerSegmenter
 
-    client = bigquery.Client(project="game-analytics-22")
+    client = bigquery.Client(project=project_id)
 
     # Ensure ML dataset exists
     dataset_ref = f"{project_id}.game_ml"
@@ -159,7 +159,7 @@ def step_ml(project_id):
     start = time.time()
     feature_sql = build_feature_store_sql(project_id)
     client.query(feature_sql).result()
-    duration = time.time() - start
+    duration = time.time() - start 
 
     # Check feature count
     count_query = f"SELECT COUNT(*) AS cnt FROM `{project_id}.game_ml.feature_store`"

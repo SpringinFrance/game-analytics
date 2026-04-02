@@ -58,17 +58,21 @@ class FirebasePublicLoader:
     # ════════════════════════════════════════════════════
 
     def create_raw_schemas(self):
-        """Create destination dataset and raw tables."""
-        # Create dataset
+        """Create destination dataset (table will be auto-created by the query)."""
+        # Create dataset only — table is created automatically by the
+        # extraction query + job_config (partitioning, clustering).
+        # This avoids schema mismatch between pre-created table and query output.
         dataset = bigquery.Dataset(self.dataset_ref)
         dataset.location = self.location
         dataset.description = "Game Analytics - Raw data from Firebase Public Dataset (Flood-It)"
         self.client.create_dataset(dataset, exists_ok=True)
         logger.info(f"Dataset {self.dataset_ref} ready")
 
-        # Create raw_events table
-        self._create_raw_events_table()
-        logger.info("All raw schemas created")
+        # Drop existing table to avoid schema conflicts
+        table_ref = f"{self.dataset_ref}.raw_events"
+        self.client.delete_table(table_ref, not_found_ok=True)
+        logger.info(f"Table {table_ref} cleared (will be recreated by query)")
+        logger.info("Raw schemas ready")
 
     def _create_raw_events_table(self):
         """Create the flattened raw events table."""
@@ -85,7 +89,6 @@ class FirebasePublicLoader:
             bigquery.SchemaField("user_pseudo_id", "STRING"),
             bigquery.SchemaField("user_id", "STRING"),
             bigquery.SchemaField("user_first_touch_timestamp", "TIMESTAMP"),
-            bigquery.SchemaField("is_active_user", "BOOLEAN"),
 
             # ── Platform ──
             bigquery.SchemaField("platform", "STRING"),
@@ -164,31 +167,31 @@ class FirebasePublicLoader:
 
         logger.info(f"Ingesting Firebase data from {date_from} to {date_to}")
 
-        # Build the extraction + flattening query
-        query = self._build_extraction_query(suffix_from, suffix_to)
-
-        # Configure destination
+        # Build extraction SELECT query
+        select_sql = self._build_extraction_query(suffix_from, suffix_to)
         dest_table = f"{self.dataset_ref}.raw_events"
 
-        job_config = bigquery.QueryJobConfig(
-            destination=dest_table,
-            write_disposition=(
-                bigquery.WriteDisposition.WRITE_TRUNCATE if overwrite
-                else bigquery.WriteDisposition.WRITE_APPEND
-            ),
-            time_partitioning=bigquery.TimePartitioning(
-                field="event_date",
-                type_=bigquery.TimePartitioningType.DAY,
-            ),
-            clustering_fields=["event_name", "platform", "geo_country"]
-        )
+        # Use CREATE OR REPLACE TABLE ... AS SELECT
+        # Note: No PARTITION BY / CLUSTER BY — BigQuery sandbox (free tier)
+        # silently writes 0 rows to partitioned tables.
+        query = f"""
+        CREATE OR REPLACE TABLE `{dest_table}`
+        AS
+        {select_sql}
+        """
 
-        logger.info("Running extraction query...")
-        job = self.client.query(query, job_config=job_config)
-        result = job.result()
+        logger.info(f"Running CREATE OR REPLACE TABLE into {dest_table} ...")
+        job = self.client.query(query)
+        job.result()  # wait for completion
 
-        rows = job.output_rows
         bytes_processed = job.total_bytes_processed or 0
+        logger.info(f"Job state: {job.state}, errors: {job.errors}")
+
+        # Get row count — query directly (metadata may lag)
+        count_result = list(self.client.query(
+            f"SELECT COUNT(*) AS cnt FROM `{dest_table}`"
+        ).result())
+        rows = count_result[0].cnt
 
         stats = {
             "rows_loaded": rows,
@@ -230,7 +233,6 @@ class FirebasePublicLoader:
             user_pseudo_id,
             user_id,
             TIMESTAMP_MICROS(user_first_touch_timestamp) AS user_first_touch_timestamp,
-            is_active_user,
 
             -- ── Platform ──
             platform,
