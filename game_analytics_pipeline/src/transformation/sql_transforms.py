@@ -132,6 +132,7 @@ def staging_sessions(project_id: str) -> str:
             geo_country,
             engagement_time_msec,
             param_level,
+            param_score,
             TIMESTAMP_DIFF(
                 event_timestamp,
                 LAG(event_timestamp) OVER (PARTITION BY user_pseudo_id ORDER BY event_timestamp),
@@ -620,7 +621,7 @@ def mart_level_funnel(project_id: str) -> str:
             MAX(score) AS best_score,
         FROM `{project_id}.game_warehouse.fact_levels`
         WHERE event_name IN ('level_up', 'level_complete', 'level_end')
-          AND (param_success IS NULL OR param_success = 'true')
+          AND (success IS NULL OR success = 'true')
           AND level_number IS NOT NULL
         GROUP BY user_pseudo_id, level_number
     )

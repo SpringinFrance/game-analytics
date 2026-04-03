@@ -214,11 +214,20 @@ class ChurnPredictor:
         cm = confusion_matrix(y_test, y_pred)
         report = classification_report(y_test, y_pred, output_dict=True)
 
+        # Find the churned class key (can be 1, "1", or np.int64(1))
+        churn_key = None
+        for k in report.keys():
+            if str(k) == "1":
+                churn_key = k
+                break
+        if churn_key is None:
+            churn_key = list(report.keys())[1]  # fallback: second class
+
         metrics = {
             "auc_roc": float(auc),
             "f1_score": float(f1),
-            "precision": float(report["1"]["precision"]),
-            "recall": float(report["1"]["recall"]),
+            "precision": float(report[churn_key]["precision"]),
+            "recall": float(report[churn_key]["recall"]),
             "accuracy": float(report["accuracy"]),
             "confusion_matrix": cm.tolist(),
             "test_size": len(y_test),
@@ -316,16 +325,18 @@ class ChurnPredictor:
         logger.info(f"Wrote {len(predictions)} predictions to {table_ref}")
 
         # Update dim_users with latest predictions
+        # NOTE: Using CREATE OR REPLACE instead of UPDATE (DML blocked on BQ sandbox/free tier)
         update_query = f"""
-        UPDATE `{self.project_id}.game_warehouse.dim_users` u
-        SET
-            u.churn_probability = p.churn_probability,
-            u.player_segment = COALESCE(p.risk_tier, u.player_segment)
-        FROM `{self.project_id}.game_ml.predictions` p
-        WHERE u.user_pseudo_id = p.user_pseudo_id
+        CREATE OR REPLACE TABLE `{self.project_id}.game_warehouse.dim_users` AS
+        SELECT
+            u.* EXCEPT(churn_probability),
+            COALESCE(p.churn_probability, u.churn_probability) AS churn_probability,
+        FROM `{self.project_id}.game_warehouse.dim_users` u
+        LEFT JOIN `{self.project_id}.game_ml.predictions` p
+            ON u.user_pseudo_id = p.user_pseudo_id
         """
         client.query(update_query).result()
-        logger.info("Updated dim_users with churn predictions")
+        logger.info("Updated dim_users with churn predictions (CREATE OR REPLACE)")
 
         # Log model metadata
         self._log_model_metadata(client)
