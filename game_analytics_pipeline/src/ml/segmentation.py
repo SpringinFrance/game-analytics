@@ -276,17 +276,21 @@ class PlayerSegmenter:
         job.result()
         logger.info(f"Wrote {len(segment_data)} segment assignments to {table_ref}")
 
-        # Update dim_users
+        # Update dim_users with segment assignments
+        # NOTE: Using CREATE OR REPLACE instead of UPDATE (DML blocked on BQ sandbox/free tier)
         update_query = f"""
-        UPDATE `{self.project_id}.game_warehouse.dim_users` u
-        SET u.player_segment = s.player_segment
-        FROM `{self.project_id}.game_ml.player_segments` s
-        WHERE u.user_pseudo_id = s.user_pseudo_id
+        CREATE OR REPLACE TABLE `{self.project_id}.game_warehouse.dim_users` AS
+        SELECT
+            u.* EXCEPT(player_segment),
+            COALESCE(s.player_segment, u.player_segment) AS player_segment,
+        FROM `{self.project_id}.game_warehouse.dim_users` u
+        LEFT JOIN `{self.project_id}.game_ml.player_segments` s
+            ON u.user_pseudo_id = s.user_pseudo_id
         """
         client.query(update_query).result()
-        logger.info("Updated dim_users with segment assignments")
+        logger.info("Updated dim_users with segment assignments (CREATE OR REPLACE)")
 
-        # Update mart_player_segments
-        from src.transformation.sql_transforms import mart_player_segments
+        # Refresh mart_player_segments
+        from ..transformation.sql_transforms import mart_player_segments
         client.query(mart_player_segments(self.project_id)).result()
         logger.info("Refreshed mart_player_segments")

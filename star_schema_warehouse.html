@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Star Schema — Game Analytics Warehouse</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .header {
+    text-align: center;
+    padding: 32px 20px 12px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .header p {
+    color: #94a3b8;
+    font-size: 14px;
+  }
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding: 16px 0 8px;
+    font-size: 13px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+  }
+  .legend-dot.dim { background: #3b82f6; }
+  .legend-dot.fact { background: #f59e0b; }
+  .legend-dot.pk { background: #10b981; }
+  .legend-dot.fk { background: #ef4444; }
+
+  .canvas {
+    position: relative;
+    width: 1100px;
+    height: 820px;
+    margin: 12px auto;
+  }
+
+  svg.connections {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  svg.connections line {
+    stroke: #475569;
+    stroke-width: 2;
+    stroke-dasharray: 6 4;
+    opacity: 0.6;
+    transition: all 0.3s;
+  }
+  svg.connections line.highlight {
+    stroke: #60a5fa;
+    stroke-width: 3;
+    opacity: 1;
+    stroke-dasharray: none;
+  }
+  svg.connections circle.endpoint {
+    fill: #60a5fa;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  svg.connections circle.endpoint.highlight {
+    opacity: 1;
+  }
+
+  .table-card {
+    position: absolute;
+    border-radius: 10px;
+    overflow: hidden;
+    min-width: 220px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    z-index: 2;
+    transition: transform 0.25s, box-shadow 0.25s;
+    cursor: pointer;
+  }
+  .table-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  .table-card.dim {
+    border: 2px solid #3b82f6;
+    background: #1e293b;
+  }
+  .table-card.fact {
+    border: 2px solid #f59e0b;
+    background: #1e293b;
+  }
+  .table-card.dim:hover { border-color: #60a5fa; }
+  .table-card.fact:hover { border-color: #fbbf24; }
+
+  .table-header {
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .table-card.dim .table-header { background: #1e3a5f; color: #93c5fd; }
+  .table-card.fact .table-header { background: #422006; color: #fcd34d; }
+
+  .table-header .icon { font-size: 16px; }
+  .table-header .badge {
+    margin-left: auto;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .dim .badge { background: #3b82f6; color: #fff; }
+  .fact .badge { background: #f59e0b; color: #1e293b; }
+
+  .table-body {
+    padding: 8px 0;
+    font-size: 12px;
+  }
+  .col-row {
+    padding: 3px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+  }
+  .col-row:hover { background: rgba(255,255,255,0.04); }
+  .col-row .tag {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .tag.pk { background: #10b981; color: #fff; }
+  .tag.fk { background: #ef4444; color: #fff; }
+  .col-row .col-name { color: #cbd5e1; }
+  .col-row .col-type { margin-left: auto; color: #64748b; font-size: 11px; }
+
+  .separator {
+    height: 1px;
+    background: #334155;
+    margin: 4px 14px;
+  }
+
+  .center-label {
+    position: absolute;
+    z-index: 3;
+    text-align: center;
+  }
+  .center-label .ring {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15,23,42,0.9);
+    margin: 0 auto;
+  }
+  .center-label .ring-text {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    line-height: 1.3;
+  }
+
+  .relationship-label {
+    position: absolute;
+    z-index: 3;
+    font-size: 10px;
+    color: #64748b;
+    background: #0f172a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .table-card { animation: fadeInUp 0.5s ease both; }
+  .table-card:nth-child(2) { animation-delay: 0.05s; }
+  .table-card:nth-child(3) { animation-delay: 0.1s; }
+  .table-card:nth-child(4) { animation-delay: 0.15s; }
+  .table-card:nth-child(5) { animation-delay: 0.2s; }
+  .table-card:nth-child(6) { animation-delay: 0.25s; }
+
+  .tooltip {
+    display: none;
+    position: absolute;
+    z-index: 10;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #cbd5e1;
+    max-width: 260px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    line-height: 1.5;
+  }
+  .tooltip.active { display: block; }
+  .tooltip strong { color: #f1f5f9; }
+
+  .footer {
+    text-align: center;
+    padding: 12px 0 24px;
+    color: #475569;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Star Schema — Game Analytics Warehouse</h1>
+  <p>BigQuery Project: game-analytics-22 &nbsp;|&nbsp; Dataset: game_warehouse &nbsp;|&nbsp; Source: Flood-It (Firebase)</p>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot dim"></div> Dimension Table</div>
+  <div class="legend-item"><div class="legend-dot fact"></div> Fact Table</div>
+  <div class="legend-item"><div class="legend-dot pk"></div> Primary Key</div>
+  <div class="legend-item"><div class="legend-dot fk"></div> Foreign Key</div>
+</div>
+
+<div class="canvas" id="canvas">
+  <svg class="connections" id="svg"></svg>
+
+  <!-- ============ DIMENSION: dim_dates ============ -->
+  <div class="table-card dim" id="dim_dates" style="top: 20px; left: 20px;" data-tip="Calendar dimension auto-generated from 2018-01-01 to 2019-12-31. Enables time-series joins, week/month rollups, and weekend analysis across all fact tables.">
+    <div class="table-header">
+      <span class="icon">📅</span> dim_dates
+      <span class="badge">DIM</span>
+    </div>
+    <div class="table-body">
+      <div class="col-row"><span class="tag pk">PK</span><span class="col-name">date_key</span><span class="col-type">DATE</span></div>
+      <div class="separator"></div>
+      <div class="col-row"><span class="col-name">year</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">quarter</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">month</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">week_of_year</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">day_of_week</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">day_name</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">month_name</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">year_week</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">year_month</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">is_weekend</span><span class="col-type">BOOL</span></div>
+    </div>
+  </div>
+
+  <!-- ============ DIMENSION: dim_users ============ -->
+  <div class="table-card dim" id="dim_users" style="top: 20px; right: 20px;" data-tip="Master user dimension with first-touch attribution, lifetime metrics, and ML placeholders (churn_probability, player_segment, ltv_predicted). One row per user_pseudo_id.">
+    <div class="table-header">
+      <span class="icon">👤</span> dim_users
+      <span class="badge">DIM</span>
+    </div>
+    <div class="table-body">
+      <div class="col-row"><span class="tag pk">PK</span><span class="col-name">user_pseudo_id</span><span class="col-type">STRING</span></div>
+      <div class="separator"></div>
+      <div class="col-row"><span class="col-name">user_id</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">install_date</span><span class="col-type">DATE</span></div>
+      <div class="col-row"><span class="col-name">platform</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">device_category</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">geo_country</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">geo_continent</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">traffic_source</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">active_days</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">total_revenue</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-name">max_level</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">lifetime_days</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">is_payer</span><span class="col-type">BOOL</span></div>
+      <div class="col-row"><span class="col-name">player_segment</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">churn_probability</span><span class="col-type">FLOAT</span></div>
+    </div>
+  </div>
+
+  <!-- ============ FACT: fact_events ============ -->
+  <div class="table-card fact" id="fact_events" style="top: 290px; left: 90px;" data-tip="Granular event fact — one row per deduplicated event. Contains all gaming params (level, score, board, success). Grain: 1 event = 1 row. ~5.7M rows.">
+    <div class="table-header">
+      <span class="icon">⚡</span> fact_events
+      <span class="badge">FACT</span>
+    </div>
+    <div class="table-body">
+      <div class="col-row"><span class="tag pk">PK</span><span class="col-name">event_id</span><span class="col-type">INT64</span></div>
+      <div class="separator"></div>
+      <div class="col-row"><span class="tag fk">FK</span><span class="col-name">user_pseudo_id</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="tag fk">FK</span><span class="col-name">event_date</span><span class="col-type">DATE</span></div>
+      <div class="col-row"><span class="col-name">event_timestamp</span><span class="col-type">TIMESTAMP</span></div>
+      <div class="col-row"><span class="col-name">event_name</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">event_value_usd</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-name">platform</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">geo_country</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">param_level</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">param_score</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">engagement_time_msec</span><span class="col-type">INT</span></div>
+    </div>
+  </div>
+
+  <!-- ============ FACT: fact_sessions ============ -->
+  <div class="table-card fact" id="fact_sessions" style="top: 290px; right: 90px;" data-tip="Session-level fact built by 30-min gap logic. Aggregates events into sessions with duration, engagement, levels played, and revenue per session.">
+    <div class="table-header">
+      <span class="icon">🎮</span> fact_sessions
+      <span class="badge">FACT</span>
+    </div>
+    <div class="table-body">
+      <div class="col-row"><span class="tag pk">PK</span><span class="col-name">session_id</span><span class="col-type">INT64</span></div>
+      <div class="separator"></div>
+      <div class="col-row"><span class="tag fk">FK</span><span class="col-name">user_pseudo_id</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="tag fk">FK</span><span class="col-name">session_date</span><span class="col-type">DATE</span></div>
+      <div class="col-row"><span class="col-name">session_start</span><span class="col-type">TIMESTAMP</span></div>
+      <div class="col-row"><span class="col-name">session_end</span><span class="col-type">TIMESTAMP</span></div>
+      <div class="col-row"><span class="col-name">session_duration_sec</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">total_engagement_sec</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-name">events_count</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">session_revenue</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-name">levels_started</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">levels_completed</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">best_score</span><span class="col-type">INT</span></div>
+    </div>
+  </div>
+
+  <!-- ============ FACT: fact_revenue ============ -->
+  <div class="table-card fact" id="fact_revenue" style="bottom: 20px; left: 20px;" data-tip="Revenue fact filtered from events where event_value_usd > 0 or monetization event types. Categorizes revenue into IAP, ad, virtual currency types.">
+    <div class="table-header">
+      <span class="icon">💰</span> fact_revenue
+      <span class="badge">FACT</span>
+    </div>
+    <div class="table-body">
+      <div class="col-row"><span class="tag pk">PK</span><span class="col-name">event_id</span><span class="col-type">INT64</span></div>
+      <div class="separator"></div>
+      <div class="col-row"><span class="tag fk">FK</span><span class="col-name">user_pseudo_id</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="tag fk">FK</span><span class="col-name">event_date</span><span class="col-type">DATE</span></div>
+      <div class="col-row"><span class="col-name">event_name</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">revenue_amount</span><span class="col-type">FLOAT</span></div>
+      <div class="col-row"><span class="col-name">revenue_type</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">platform</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">geo_country</span><span class="col-type">STRING</span></div>
+    </div>
+  </div>
+
+  <!-- ============ FACT: fact_levels ============ -->
+  <div class="table-card fact" id="fact_levels" style="bottom: 20px; right: 20px;" data-tip="Level progression fact tracking every level_start, level_up, level_end, level_retry event. Contains score, board, success outcome for funnel analysis.">
+    <div class="table-header">
+      <span class="icon">🏆</span> fact_levels
+      <span class="badge">FACT</span>
+    </div>
+    <div class="table-body">
+      <div class="col-row"><span class="tag pk">PK</span><span class="col-name">event_id</span><span class="col-type">INT64</span></div>
+      <div class="separator"></div>
+      <div class="col-row"><span class="tag fk">FK</span><span class="col-name">user_pseudo_id</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="tag fk">FK</span><span class="col-name">event_date</span><span class="col-type">DATE</span></div>
+      <div class="col-row"><span class="col-name">event_name</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">level_number</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">score</span><span class="col-type">INT</span></div>
+      <div class="col-row"><span class="col-name">board</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">success</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">level_action</span><span class="col-type">STRING</span></div>
+      <div class="col-row"><span class="col-name">platform</span><span class="col-type">STRING</span></div>
+    </div>
+  </div>
+
+  <!-- Center hub -->
+  <div class="center-label" style="top: 370px; left: 500px;">
+    <div class="ring">
+      <div class="ring-text">STAR<br>SCHEMA<br>HUB</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  game-analytics-22.game_warehouse &nbsp;|&nbsp; 2 Dimensions + 4 Facts &nbsp;|&nbsp; Hover tables for details &nbsp;|&nbsp; Click to highlight relationships
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const connections = [
+  // dim_dates → facts via event_date / session_date
+  { from: 'dim_dates', to: 'fact_events', label: 'date_key = event_date' },
+  { from: 'dim_dates', to: 'fact_sessions', label: 'date_key = session_date' },
+  { from: 'dim_dates', to: 'fact_revenue', label: 'date_key = event_date' },
+  { from: 'dim_dates', to: 'fact_levels', label: 'date_key = event_date' },
+  // dim_users → facts via user_pseudo_id
+  { from: 'dim_users', to: 'fact_events', label: 'user_pseudo_id' },
+  { from: 'dim_users', to: 'fact_sessions', label: 'user_pseudo_id' },
+  { from: 'dim_users', to: 'fact_revenue', label: 'user_pseudo_id' },
+  { from: 'dim_users', to: 'fact_levels', label: 'user_pseudo_id' },
+];
+
+const svg = document.getElementById('svg');
+const canvas = document.getElementById('canvas');
+const tooltip = document.getElementById('tooltip');
+
+function getCenter(el) {
+  const r = el.getBoundingClientRect();
+  const cr = canvas.getBoundingClientRect();
+  return { x: r.left - cr.left + r.width / 2, y: r.top - cr.top + r.height / 2 };
+}
+
+function drawLines() {
+  svg.innerHTML = '';
+  connections.forEach((c, i) => {
+    const fromEl = document.getElementById(c.from);
+    const toEl = document.getElementById(c.to);
+    const a = getCenter(fromEl);
+    const b = getCenter(toEl);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+    line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+    line.dataset.from = c.from;
+    line.dataset.to = c.to;
+    line.dataset.idx = i;
+    svg.appendChild(line);
+    // endpoints
+    [a, b].forEach(p => {
+      const circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circ.setAttribute('cx', p.x); circ.setAttribute('cy', p.y);
+      circ.setAttribute('r', 4);
+      circ.classList.add('endpoint');
+      circ.dataset.from = c.from;
+      circ.dataset.to = c.to;
+      svg.appendChild(circ);
+    });
+  });
+}
+
+drawLines();
+window.addEventListener('resize', drawLines);
+
+// Highlight on hover
+document.querySelectorAll('.table-card').forEach(card => {
+  card.addEventListener('mouseenter', () => {
+    const id = card.id;
+    svg.querySelectorAll('line').forEach(l => {
+      if (l.dataset.from === id || l.dataset.to === id) l.classList.add('highlight');
+    });
+    svg.querySelectorAll('circle.endpoint').forEach(c => {
+      if (c.dataset.from === id || c.dataset.to === id) c.classList.add('highlight');
+    });
+    // tooltip
+    const tip = card.dataset.tip;
+    if (tip) {
+      const rect = card.getBoundingClientRect();
+      const cRect = canvas.getBoundingClientRect();
+      tooltip.innerHTML = `<strong>${card.id}</strong><br>${tip}`;
+      tooltip.classList.add('active');
+      let left = rect.left - cRect.left + rect.width + 12;
+      let top = rect.top - cRect.top;
+      if (left + 260 > 1100) left = rect.left - cRect.left - 272;
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+    }
+  });
+  card.addEventListener('mouseleave', () => {
+    svg.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+    tooltip.classList.remove('active');
+  });
+});
+</script>
+
+</body>
+</html>
