@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood-It — Product Metrics Overview</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --card-hover: #22263a;
+            --border: #2a2e3d;
+            --text: #e4e6ed;
+            --text-muted: #8b8fa3;
+            --accent: #6c5ce7;
+            --accent-light: #a29bfe;
+            --green: #00cec9;
+            --green-bg: rgba(0,206,201,0.08);
+            --orange: #fdcb6e;
+            --orange-bg: rgba(253,203,110,0.08);
+            --red: #ff7675;
+            --red-bg: rgba(255,118,117,0.08);
+            --blue: #74b9ff;
+            --blue-bg: rgba(116,185,255,0.08);
+            --pink: #fd79a8;
+            --pink-bg: rgba(253,121,168,0.08);
+            --purple: #a29bfe;
+            --purple-bg: rgba(162,155,254,0.08);
+            --yellow: #ffeaa7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 32px 40px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.5px;
+        }
+
+        .header-left h1 span {
+            background: linear-gradient(135deg, var(--accent), var(--green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-left .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .data-badge {
+            display: inline-block;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .data-badge strong {
+            color: var(--accent-light);
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 48px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .section-source {
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--card);
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            border: 1px solid var(--border);
+        }
+
+        /* Metric Grid */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .metric-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card:hover {
+            border-color: var(--accent);
+            background: var(--card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .metric-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .metric-formula {
+            font-size: 12px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: var(--accent-light);
+            background: rgba(108,92,231,0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .metric-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .metric-tag {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        /* Color themes for sections */
+        .theme-green .section-icon { background: var(--green-bg); color: var(--green); }
+        .theme-green .metric-card::before { background: var(--green); }
+        .theme-green .metric-tag { background: var(--green-bg); color: var(--green); }
+
+        .theme-orange .section-icon { background: var(--orange-bg); color: var(--orange); }
+        .theme-orange .metric-card::before { background: var(--orange); }
+        .theme-orange .metric-tag { background: var(--orange-bg); color: var(--orange); }
+
+        .theme-blue .section-icon { background: var(--blue-bg); color: var(--blue); }
+        .theme-blue .metric-card::before { background: var(--blue); }
+        .theme-blue .metric-tag { background: var(--blue-bg); color: var(--blue); }
+
+        .theme-pink .section-icon { background: var(--pink-bg); color: var(--pink); }
+        .theme-pink .metric-card::before { background: var(--pink); }
+        .theme-pink .metric-tag { background: var(--pink-bg); color: var(--pink); }
+
+        .theme-purple .section-icon { background: var(--purple-bg); color: var(--purple); }
+        .theme-purple .metric-card::before { background: var(--purple); }
+        .theme-purple .metric-tag { background: var(--purple-bg); color: var(--purple); }
+
+        .theme-red .section-icon { background: var(--red-bg); color: var(--red); }
+        .theme-red .metric-card::before { background: var(--red); }
+        .theme-red .metric-tag { background: var(--red-bg); color: var(--red); }
+
+        .theme-yellow .section-icon { background: rgba(255,234,167,0.1); color: var(--yellow); }
+        .theme-yellow .metric-card::before { background: var(--yellow); }
+        .theme-yellow .metric-tag { background: rgba(255,234,167,0.1); color: var(--yellow); }
+
+        /* Priority badges */
+        .priority {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .priority.p1 { background: var(--red); box-shadow: 0 0 6px var(--red); }
+        .priority.p2 { background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+        .priority.p3 { background: var(--green); }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 32px;
+            padding: 16px 20px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Fullwidth metric card */
+        .metric-card.wide {
+            grid-column: span 2;
+        }
+
+        /* Summary box */
+        .summary-box {
+            background: linear-gradient(135deg, rgba(108,92,231,0.08), rgba(0,206,201,0.08));
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px 28px;
+            margin-bottom: 40px;
+        }
+
+        .summary-box h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--accent-light);
+        }
+
+        .summary-box p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .summary-stat {
+            text-align: center;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+
+        .summary-stat .val {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .summary-stat .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            .metric-grid { grid-template-columns: 1fr; }
+            .metric-card.wide { grid-column: span 1; }
+            .summary-stats { grid-template-columns: repeat(2, 1fr); }
+            .header { flex-direction: column; gap: 16px; }
+            .legend { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <h1><span>Flood-It</span> — Product Metrics Map</h1>
+            <div class="subtitle">Game Analytics Mart Layer &bull; Cho Project Owner nắm nhanh toàn cảnh game</div>
+        </div>
+        <div class="header-right">
+            <div class="data-badge">
+                Dataset: <strong>~5.7M records</strong> &bull; <strong>2018-06-12 → 2018-10-03</strong> (114 ngày)
+            </div>
+        </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="summary-box">
+        <h3>Data Architecture — game_marts layer</h3>
+        <p>Tất cả metrics bên dưới được tính sẵn trong 7 bảng mart, query trực tiếp không cần JOIN thêm. Chia thành 6 nhóm chỉ số giúp bạn đánh giá game từ góc nhìn Product Owner: quy mô user, khả năng giữ chân, monetization, chất lượng session, level design, và phân bố địa lý.</p>
+        <div class="summary-stats">
+            <div class="summary-stat">
+                <div class="val">7</div>
+                <div class="label">Bảng Mart</div>
+            </div>
+            <div class="summary-stat">
+                <div class="val">50+</div>
+                <div class="label">Metrics sẵn dùng</div>
+            </div>
+            <div class="summary-stat">
+                <div class="val">6</div>
+                <div class="label">Nhóm phân tích</div>
+            </div>
+            <div class="summary-stat">
+                <div class="val">114</div>
+                <div class="label">Ngày dữ liệu</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red); box-shadow:0 0 6px var(--red)"></div> North Star / Must-track</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--orange); box-shadow:0 0 6px var(--orange)"></div> High priority</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Supporting metric</div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- 1. USER ACQUISITION & GROWTH -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section theme-green">
+        <div class="section-header">
+            <div class="section-icon">&#x1F4C8;</div>
+            <div>
+                <div class="section-title">1. User Acquisition & Growth</div>
+            </div>
+            <span class="section-source">mart_daily_kpis</span>
+        </div>
+        <div class="metric-grid">
+            <div class="metric-card">
+                <div class="priority p1"></div>
+                <div class="metric-name">DAU (Daily Active Users)</div>
+                <div class="metric-formula">COUNT(DISTINCT user_pseudo_id) per day</div>
+                <div class="metric-desc">Số user unique hoạt động mỗi ngày. North star metric phản ánh sức khỏe game hàng ngày.</div>
+                <span class="metric-tag">North Star</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p1"></div>
+                <div class="metric-name">MAU (Monthly Active Users)</div>
+                <div class="metric-formula">COUNT(DISTINCT user) trong 30-day rolling</div>
+                <div class="metric-desc">User unique trong 30 ngày gần nhất (rolling window). Cho thấy tổng quy mô active player base.</div>
+                <span class="metric-tag">North Star</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">Stickiness (DAU/MAU)</div>
+                <div class="metric-formula">DAU / MAU</div>
+                <div class="metric-desc">Tỷ lệ user quay lại hàng ngày so với tổng MAU. Benchmark game casual: 15-25%. Càng cao = game càng "gây nghiện".</div>
+                <span class="metric-tag">Engagement</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">New Users (Daily Installs)</div>
+                <div class="metric-formula">COUNT(*) WHERE install_date = today</div>
+                <div class="metric-desc">Số user mới cài đặt mỗi ngày. Tracking tốc độ tăng trưởng organic & paid.</div>
+                <span class="metric-tag">Acquisition</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- 2. RETENTION -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section theme-orange">
+        <div class="section-header">
+            <div class="section-icon">&#x1F501;</div>
+            <div>
+                <div class="section-title">2. Retention & Churn</div>
+            </div>
+            <span class="section-source">mart_retention_cohorts</span>
+            <span class="section-source">mart_player_segments</span>
+        </div>
+        <div class="metric-grid">
+            <div class="metric-card">
+                <div class="priority p1"></div>
+                <div class="metric-name">D1 Retention</div>
+                <div class="metric-formula">d1_users / cohort_size</div>
+                <div class="metric-desc">% user quay lại sau 1 ngày kể từ install. Benchmark casual game: 35-45%. Phản ánh first impression & onboarding quality.</div>
+                <span class="metric-tag">Critical</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p1"></div>
+                <div class="metric-name">D7 Retention</div>
+                <div class="metric-formula">d7_users / cohort_size</div>
+                <div class="metric-desc">% user còn lại sau 1 tuần. Benchmark: 15-20%. Đo lường core loop có đủ hấp dẫn để giữ player không.</div>
+                <span class="metric-tag">Critical</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">D14 / D30 Retention</div>
+                <div class="metric-formula">d14_users / cohort_size, d30_users / cohort_size</div>
+                <div class="metric-desc">Long-term retention. D30 benchmark casual: 5-8%. Nếu thấp hơn, cần review content depth & progression system.</div>
+                <span class="metric-tag">Long-term health</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">Player Segments</div>
+                <div class="metric-formula">RFM-based: whale, dolphin, minnow, engaged_free, casual, at_risk, churned</div>
+                <div class="metric-desc">Phân loại user theo Recency-Frequency-Monetary. Quan trọng để biết tỉ lệ phân bổ và target từng nhóm khác nhau.</div>
+                <span class="metric-tag">Segmentation</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p3"></div>
+                <div class="metric-name">Cohort Size</div>
+                <div class="metric-formula">COUNT(DISTINCT user) WHERE days_since_install = 0</div>
+                <div class="metric-desc">Kích thước cohort mỗi ngày, dùng cùng với retention % để biết số tuyệt đối user còn lại.</div>
+                <span class="metric-tag">Supporting</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p3"></div>
+                <div class="metric-name">D3 Retention</div>
+                <div class="metric-formula">d3_users / cohort_size</div>
+                <div class="metric-desc">Checkpoint giữa D1 và D7, giúp phát hiện drop-off sớm nếu player cảm thấy game lặp lại.</div>
+                <span class="metric-tag">Diagnostic</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- 3. REVENUE & MONETIZATION -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section theme-pink">
+        <div class="section-header">
+            <div class="section-icon">&#x1F4B0;</div>
+            <div>
+                <div class="section-title">3. Revenue & Monetization</div>
+            </div>
+            <span class="section-source">mart_daily_kpis</span>
+            <span class="section-source">mart_revenue_daily</span>
+            <span class="section-source">mart_player_segments</span>
+        </div>
+        <div class="metric-grid">
+            <div class="metric-card">
+                <div class="priority p1"></div>
+                <div class="metric-name">Total Revenue (Daily)</div>
+                <div class="metric-formula">SUM(revenue_amount) per day</div>
+                <div class="metric-desc">Tổng doanh thu hàng ngày (USD). Breakdown theo revenue_type: IAP, ad, virtual currency.</div>
+                <span class="metric-tag">North Star</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p1"></div>
+                <div class="metric-name">ARPU</div>
+                <div class="metric-formula">total_revenue / DAU</div>
+                <div class="metric-desc">Average Revenue Per User. Đo hiệu quả monetize trên toàn bộ user base (kể cả free users).</div>
+                <span class="metric-tag">Unit economics</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">ARPPU</div>
+                <div class="metric-formula">total_revenue / paying_users</div>
+                <div class="metric-desc">Average Revenue Per Paying User. Phản ánh mức chi trung bình của nhóm user đã trả tiền.</div>
+                <span class="metric-tag">Monetization</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">Payer Conversion Rate</div>
+                <div class="metric-formula">paying_users / DAU</div>
+                <div class="metric-desc">% user chuyển sang trả tiền. Benchmark F2P casual: 2-5%. Metric then chốt đánh giá paywall design.</div>
+                <span class="metric-tag">Conversion</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">Revenue by Type</div>
+                <div class="metric-formula">SUM(revenue) GROUP BY revenue_type</div>
+                <div class="metric-desc">Phân loại: IAP vs Ad revenue vs Virtual currency. Cho biết revenue mix và nguồn doanh thu chính.</div>
+                <span class="metric-tag">Revenue mix</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p3"></div>
+                <div class="metric-name">Avg Transaction Value</div>
+                <div class="metric-formula">AVG(revenue_amount)</div>
+                <div class="metric-desc">Giá trị trung bình mỗi giao dịch. Kết hợp transaction_count để hiểu hành vi chi tiêu.</div>
+                <span class="metric-tag">Pricing</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p3"></div>
+                <div class="metric-name">Segment Revenue</div>
+                <div class="metric-formula">SUM(total_revenue) GROUP BY player_segment</div>
+                <div class="metric-desc">Revenue theo nhóm player (whale/dolphin/minnow). Whale thường đóng góp 50%+ tổng doanh thu.</div>
+                <span class="metric-tag">Segmentation</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p3"></div>
+                <div class="metric-name">Unique Payers (Daily)</div>
+                <div class="metric-formula">COUNT(DISTINCT user) WHERE revenue > 0</div>
+                <div class="metric-desc">Số lượng user trả tiền mỗi ngày. Track xu hướng tăng/giảm để đo sức khỏe monetization.</div>
+                <span class="metric-tag">Paying base</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- 4. SESSION & ENGAGEMENT -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section theme-blue">
+        <div class="section-header">
+            <div class="section-icon">&#x23F1;</div>
+            <div>
+                <div class="section-title">4. Session & Engagement Quality</div>
+            </div>
+            <span class="section-source">mart_daily_kpis</span>
+            <span class="section-source">mart_session_stats</span>
+        </div>
+        <div class="metric-grid">
+            <div class="metric-card">
+                <div class="priority p1"></div>
+                <div class="metric-name">Avg Session Duration</div>
+                <div class="metric-formula">AVG(session_duration_sec)</div>
+                <div class="metric-desc">Thời lượng trung bình 1 session. Casual game benchmark: 3-8 phút. Quá ngắn = thiếu content, quá dài = burnout risk.</div>
+                <span class="metric-tag">Core engagement</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">Sessions per DAU</div>
+                <div class="metric-formula">total_sessions / DAU</div>
+                <div class="metric-desc">Trung bình số lần mở game/ngày/user. Cao = game có pull-back loops tốt (notifications, daily rewards...).</div>
+                <span class="metric-tag">Frequency</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">Avg Engagement Time</div>
+                <div class="metric-formula">AVG(total_engagement_sec)</div>
+                <div class="metric-desc">Thời gian user thực sự tương tác (không tính idle). Chính xác hơn session duration.</div>
+                <span class="metric-tag">True engagement</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">Avg Levels per Session</div>
+                <div class="metric-formula">AVG(levels_completed) per session</div>
+                <div class="metric-desc">Số level hoàn thành/session. Indicator quan trọng cho content consumption pace.</div>
+                <span class="metric-tag">Progression</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p3"></div>
+                <div class="metric-name">Session Length Distribution</div>
+                <div class="metric-formula">&lt;1m | 1-5m | 5-15m | 15m+</div>
+                <div class="metric-desc">Phân bổ 4 nhóm session length. Nếu đa số &lt;1 phút = vấn đề load time hoặc onboarding fail.</div>
+                <span class="metric-tag">Distribution</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p3"></div>
+                <div class="metric-name">Median Session Duration</div>
+                <div class="metric-formula">APPROX_QUANTILES(duration, 100)[50]</div>
+                <div class="metric-desc">Median chính xác hơn AVG vì loại bỏ outliers (session quá dài do AFK). So sánh với AVG để phát hiện skew.</div>
+                <span class="metric-tag">Diagnostic</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p3"></div>
+                <div class="metric-name">Avg Events per Session</div>
+                <div class="metric-formula">AVG(events_count)</div>
+                <div class="metric-desc">Mức độ tương tác (tap, swipe, action) trong mỗi session. Proxy cho session richness.</div>
+                <span class="metric-tag">Depth</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p3"></div>
+                <div class="metric-name">Total Sessions (Daily)</div>
+                <div class="metric-formula">COUNT(*) per day</div>
+                <div class="metric-desc">Tổng số session mỗi ngày. Kết hợp DAU để tính sessions per user.</div>
+                <span class="metric-tag">Volume</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- 5. LEVEL & GAME DESIGN -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section theme-purple">
+        <div class="section-header">
+            <div class="section-icon">&#x1F3AE;</div>
+            <div>
+                <div class="section-title">5. Level Progression & Game Design</div>
+            </div>
+            <span class="section-source">mart_level_funnel</span>
+        </div>
+        <div class="metric-grid">
+            <div class="metric-card">
+                <div class="priority p1"></div>
+                <div class="metric-name">Level Completion Rate</div>
+                <div class="metric-formula">users_completed / total_users per level</div>
+                <div class="metric-desc">% tổng user base đã vượt qua từng level. Chart dạng funnel — chỗ nào drop mạnh = level quá khó hoặc thiếu motivation.</div>
+                <span class="metric-tag">Game design</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">Avg Attempts per Level</div>
+                <div class="metric-formula">AVG(attempts)</div>
+                <div class="metric-desc">Trung bình số lần thử mỗi level. Spike đột biến = difficulty wall. Target: tăng dần đều, không có cliff.</div>
+                <span class="metric-tag">Difficulty curve</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">Avg Best Score per Level</div>
+                <div class="metric-formula">AVG(best_score)</div>
+                <div class="metric-desc">Điểm cao trung bình mỗi level. Kết hợp với attempts để đánh giá skill ceiling & reward feeling.</div>
+                <span class="metric-tag">Skill curve</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p3"></div>
+                <div class="metric-name">Avg Days to Complete</div>
+                <div class="metric-formula">AVG(first_completed_date - install_date)</div>
+                <div class="metric-desc">Trung bình bao nhiêu ngày sau install user mới vượt level đó. Đo pacing & content consumption speed.</div>
+                <span class="metric-tag">Pacing</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p3"></div>
+                <div class="metric-name">Users Completed (per level)</div>
+                <div class="metric-formula">COUNT(DISTINCT user) per level_number</div>
+                <div class="metric-desc">Số lượng tuyệt đối user vượt qua mỗi level. Kết hợp completion_rate để ra bức tranh đầy đủ.</div>
+                <span class="metric-tag">Volume</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- 6. GEO & MARKET -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section theme-red">
+        <div class="section-header">
+            <div class="section-icon">&#x1F30D;</div>
+            <div>
+                <div class="section-title">6. Geographic & Market Distribution</div>
+            </div>
+            <span class="section-source">mart_geo_stats</span>
+        </div>
+        <div class="metric-grid">
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">Users by Country</div>
+                <div class="metric-formula">COUNT(DISTINCT user) GROUP BY geo_country</div>
+                <div class="metric-desc">Top markets theo user count. Quyết định localization priority & UA spend allocation.</div>
+                <span class="metric-tag">Market sizing</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">Payer Rate by Country</div>
+                <div class="metric-formula">payers / total_users per country</div>
+                <div class="metric-desc">Tỉ lệ user trả tiền theo quốc gia. Giúp identify high-value markets cho monetization focus.</div>
+                <span class="metric-tag">Monetization</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p2"></div>
+                <div class="metric-name">Revenue by Country</div>
+                <div class="metric-formula">SUM(total_revenue) per country</div>
+                <div class="metric-desc">Tổng doanh thu theo quốc gia. Cross-reference với user count để tìm high-ARPU markets.</div>
+                <span class="metric-tag">Revenue</span>
+            </div>
+            <div class="metric-card">
+                <div class="priority p3"></div>
+                <div class="metric-name">Avg Engagement by Geo</div>
+                <div class="metric-formula">AVG(engagement_min), AVG(active_days), AVG(level)</div>
+                <div class="metric-desc">So sánh engagement depth giữa các thị trường: active days, level reached, playtime. Phát hiện thị trường có user chất lượng cao.</div>
+                <span class="metric-tag">Quality</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- QUICK REFERENCE TABLE -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section">
+        <div class="section-header" style="margin-bottom:16px;">
+            <div class="section-icon" style="background:rgba(228,230,237,0.05); color:var(--text);">&#x1F4CB;</div>
+            <div class="section-title">Quick Reference — Mart Table Mapping</div>
+        </div>
+        <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <thead>
+                    <tr style="border-bottom:2px solid var(--border); text-align:left;">
+                        <th style="padding:12px 16px; color:var(--text-muted); font-weight:600;">Mart Table</th>
+                        <th style="padding:12px 16px; color:var(--text-muted); font-weight:600;">Grain</th>
+                        <th style="padding:12px 16px; color:var(--text-muted); font-weight:600;">Key Metrics</th>
+                        <th style="padding:12px 16px; color:var(--text-muted); font-weight:600;">Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:12px 16px; font-family:monospace; color:var(--green);">mart_daily_kpis</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">date × platform</td>
+                        <td style="padding:12px 16px;">DAU, MAU, stickiness, ARPU, ARPPU, sessions, new users</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">Daily health check & trend line</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:12px 16px; font-family:monospace; color:var(--orange);">mart_retention_cohorts</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">cohort_date × platform × source</td>
+                        <td style="padding:12px 16px;">D1/D3/D7/D14/D30 retention, cohort size</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">Retention heatmap & cohort analysis</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:12px 16px; font-family:monospace; color:var(--pink);">mart_revenue_daily</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">date × platform × revenue_type</td>
+                        <td style="padding:12px 16px;">Revenue, payers, transactions, avg transaction value</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">Revenue trend & monetization mix</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:12px 16px; font-family:monospace; color:var(--pink);">mart_player_segments</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">user_pseudo_id</td>
+                        <td style="padding:12px 16px;">RFM scores, segment label, LTV indicators</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">Player segmentation & whale tracking</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:12px 16px; font-family:monospace; color:var(--blue);">mart_session_stats</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">date × platform</td>
+                        <td style="padding:12px 16px;">Session count, duration, engagement, length distribution</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">Engagement quality & session health</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:12px 16px; font-family:monospace; color:var(--purple);">mart_level_funnel</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">level_number</td>
+                        <td style="padding:12px 16px;">Completion rate, attempts, scores, days to complete</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">Level design & difficulty tuning</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:12px 16px; font-family:monospace; color:var(--red);">mart_geo_stats</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">geo_country × continent</td>
+                        <td style="padding:12px 16px;">Users, payers, revenue, engagement per country</td>
+                        <td style="padding:12px 16px; color:var(--text-muted);">Market analysis & geo-targeting</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        Flood-It Game Analytics &bull; Metrics Map for Product Owner &bull; Source: Firebase Public Dataset (analytics_153293282)
+    </div>
+
+</body>
+</html>

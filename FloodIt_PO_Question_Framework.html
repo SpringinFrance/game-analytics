@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood-It — PO Diagnostic Question Framework</title>
+    <style>
+        :root {
+            --bg: #0c0e14;
+            --surface: #151821;
+            --card: #1a1e2a;
+            --card-hover: #1f2537;
+            --border: #272d3d;
+            --border-accent: #3a4160;
+            --text: #e2e5ed;
+            --text-muted: #8891a5;
+            --text-dim: #555d73;
+            --accent: #7c6cf0;
+            --accent-soft: rgba(124,108,240,0.12);
+            --green: #34d399;
+            --green-soft: rgba(52,211,153,0.10);
+            --orange: #fbbf24;
+            --orange-soft: rgba(251,191,36,0.10);
+            --red: #f87171;
+            --red-soft: rgba(248,113,113,0.10);
+            --blue: #60a5fa;
+            --blue-soft: rgba(96,165,250,0.10);
+            --pink: #f472b6;
+            --pink-soft: rgba(244,114,182,0.10);
+            --purple: #a78bfa;
+            --purple-soft: rgba(167,139,250,0.10);
+            --cyan: #67e8f9;
+            --cyan-soft: rgba(103,232,249,0.10);
+            --teal: #2dd4bf;
+            --teal-soft: rgba(45,212,191,0.10);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+            padding: 36px 44px;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header { margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .header h1 { font-size: 26px; font-weight: 700; }
+        .header h1 span { color: var(--accent); }
+        .header .sub { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+
+        /* Context box */
+        .context-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px 28px;
+            margin-bottom: 36px;
+        }
+        .context-box h3 { font-size: 14px; font-weight: 600; color: var(--cyan); margin-bottom: 10px; }
+        .context-box p { font-size: 13px; color: var(--text-muted); }
+        .context-box .highlight { color: var(--text); font-weight: 500; }
+
+        /* Flow diagram */
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .flow-step {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .flow-arrow { color: var(--text-dim); font-size: 16px; }
+
+        /* ── Theme Section ── */
+        .theme-section {
+            margin-bottom: 52px;
+        }
+
+        .theme-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 6px;
+        }
+        .theme-icon {
+            width: 46px; height: 46px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0;
+        }
+        .theme-title { font-size: 20px; font-weight: 700; }
+        .theme-subtitle {
+            font-size: 13px; color: var(--text-muted);
+            margin-left: 60px; margin-bottom: 20px;
+        }
+
+        /* ── Question Card ── */
+        .q-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .q-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        .q-card:hover {
+            border-color: var(--border-accent);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .q-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 20px 24px 16px;
+        }
+
+        .q-number {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700;
+            flex-shrink: 0;
+            color: #fff;
+        }
+
+        .q-content { flex: 1; }
+
+        .q-question {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .q-why {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        .q-why strong { color: var(--text); font-weight: 500; }
+
+        /* Action / Brief section */
+        .q-bottom {
+            background: rgba(0,0,0,0.15);
+            padding: 14px 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .q-meta-block {}
+        .q-meta-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+        .q-meta-value {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        .q-meta-value code {
+            background: rgba(124,108,240,0.1);
+            color: var(--accent);
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        .q-action-tag {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-top: 4px;
+            margin-right: 4px;
+        }
+        .tag-design { background: var(--purple-soft); color: var(--purple); }
+        .tag-marketing { background: var(--blue-soft); color: var(--blue); }
+        .tag-product { background: var(--green-soft); color: var(--green); }
+        .tag-monetization { background: var(--pink-soft); color: var(--pink); }
+        .tag-data { background: var(--cyan-soft); color: var(--cyan); }
+
+        /* Priority indicator */
+        .q-priority {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+        .q-card { position: relative; }
+        .pri-critical .q-priority { background: var(--red); }
+        .pri-high .q-priority { background: var(--orange); }
+        .pri-medium .q-priority { background: var(--blue); }
+
+        /* Color themes */
+        .t-green .theme-icon { background: var(--green-soft); color: var(--green); }
+        .t-green .q-number { background: var(--green); }
+        .t-green .theme-title { color: var(--green); }
+
+        .t-orange .theme-icon { background: var(--orange-soft); color: var(--orange); }
+        .t-orange .q-number { background: var(--orange); color: #1a1e2a; }
+        .t-orange .theme-title { color: var(--orange); }
+
+        .t-pink .theme-icon { background: var(--pink-soft); color: var(--pink); }
+        .t-pink .q-number { background: var(--pink); }
+        .t-pink .theme-title { color: var(--pink); }
+
+        .t-blue .theme-icon { background: var(--blue-soft); color: var(--blue); }
+        .t-blue .q-number { background: var(--blue); color: #1a1e2a; }
+        .t-blue .theme-title { color: var(--blue); }
+
+        .t-purple .theme-icon { background: var(--purple-soft); color: var(--purple); }
+        .t-purple .q-number { background: var(--purple); color: #1a1e2a; }
+        .t-purple .theme-title { color: var(--purple); }
+
+        .t-teal .theme-icon { background: var(--teal-soft); color: var(--teal); }
+        .t-teal .q-number { background: var(--teal); color: #1a1e2a; }
+        .t-teal .theme-title { color: var(--teal); }
+
+        /* Divider */
+        .divider { height: 1px; background: var(--border); margin: 48px 0; }
+
+        /* Summary table */
+        .summary-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .summary-table th {
+            text-align: left; padding: 10px 14px;
+            border-bottom: 2px solid var(--border);
+            color: var(--text-dim); font-weight: 600; font-size: 11px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .summary-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .summary-table td:first-child { color: var(--text); font-weight: 500; }
+
+        .footer {
+            text-align: center; color: var(--text-dim); font-size: 11px;
+            margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 900px) {
+            body { padding: 16px; }
+            .q-bottom { grid-template-columns: 1fr; }
+            .flow { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════ HEADER ═══════════════════ -->
+<div class="header">
+    <h1><span>Flood-It</span> — PO Diagnostic Question Framework</h1>
+    <div class="sub">Bộ câu hỏi phân tích cho Project Owner &bull; Từ mart tables → Actionable Insights → Brief cho Game Design & Marketing</div>
+</div>
+
+<!-- ═══════════════════ CONTEXT ═══════════════════ -->
+<div class="context-box">
+    <h3>Cách sử dụng bộ câu hỏi này</h3>
+    <p>Mỗi câu hỏi được thiết kế theo flow: <span class="highlight">Hỏi → Đo bằng data nào → Insight kỳ vọng → Brief cho team nào</span>. Ý tưởng giống cách bạn đề cập về Bike Stunt: không chỉ dừng ở "số liệu là bao nhiêu" mà phải dẫn đến <span class="highlight">action cụ thể</span> — nerf level, đổi vị trí ads, chạy campaign mới...</p>
+    <div class="flow">
+        <div class="flow-step" style="border-color:var(--cyan);">📊 Query Mart Table</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="border-color:var(--purple);">🔍 Phát hiện Pattern</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="border-color:var(--orange);">💡 Rút ra Insight</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="border-color:var(--green);">✅ Brief Action cho Team</div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- THEME 1: LEVEL DROP & DIFFICULTY — CHO GAME DESIGN -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="theme-section t-purple">
+    <div class="theme-header">
+        <div class="theme-icon">🎮</div>
+        <div class="theme-title">Theme 1 — Level Drop & Difficulty Walls</div>
+    </div>
+    <div class="theme-subtitle">Focus: Tìm level nào đang chặn user, tại sao, và đề xuất điều chỉnh cho Game Design team</div>
+
+    <div class="q-grid">
+        <!-- Q1.1 -->
+        <div class="q-card pri-critical">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">1.1</div>
+                <div class="q-content">
+                    <div class="q-question">Level nào có completion rate drop mạnh nhất (>15% so với level trước)?</div>
+                    <div class="q-why">Khi completion rate giảm đột ngột giữa 2 level liên tiếp, đó là <strong>difficulty wall</strong> — nơi user bỏ game nhiều nhất. Giống Bike Stunt v1.2.5→1.2.9 vẫn chưa cải thiện, cần xác định chính xác vị trí drop.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_level_funnel</code><br>
+                        Fields: <code>level_number</code> <code>completion_rate</code> <code>users_completed</code><br>
+                        Tính: <code>completion_rate[n] - completion_rate[n-1]</code> → sort desc
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Danh sách top 5-10 "cliff levels" — vd: Level 12→13 drop 22%, Level 31→32 drop 18%...<br>
+                        Cross-check <code>avg_attempts</code> để xác nhận user đang struggle hay chỉ bỏ ngang
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-design">Game Design</span><br>
+                        → Nerf difficulty tại các cliff levels (giảm số màu, tăng moves)<br>
+                        → Thêm hint/tutorial popup tại level drop cao nhất<br>
+                        → Cân nhắc thêm "bonus level" dễ trước cliff để giữ momentum
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q1.2 -->
+        <div class="q-card pri-critical">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">1.2</div>
+                <div class="q-content">
+                    <div class="q-question">Level nào có avg_attempts cao bất thường (>2x median) nhưng users vẫn cố gắng vượt qua?</div>
+                    <div class="q-why">Phân biệt 2 loại level khó: (A) khó nhưng user persist → <strong>"good challenge"</strong>, (B) khó và user bỏ luôn → <strong>"frustration wall"</strong>. Loại A giữ nguyên, loại B cần nerf.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_level_funnel</code><br>
+                        Fields: <code>avg_attempts</code> <code>completion_rate</code> <code>users_completed</code><br>
+                        Matrix: attempts (cao/thấp) × completion (cao/thấp)
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Scatter plot 4 quadrants:<br>
+                        • High attempts + High completion = Good challenge ✅<br>
+                        • High attempts + Low completion = Frustration wall ❌<br>
+                        • Low attempts + Low completion = User gives up immediately ❌❌
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-design">Game Design</span><br>
+                        → Nerf "Frustration wall" levels: giảm board size, tăng max moves<br>
+                        → "Give up immediately" levels: review level design root cause — quá confusing hay quá hard?<br>
+                        → Keep "Good challenge" levels — chúng tạo sense of achievement
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q1.3 -->
+        <div class="q-card pri-high">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">1.3</div>
+                <div class="q-content">
+                    <div class="q-question">User mất bao lâu để đến các level milestone (10, 20, 50, 100)? Có bottleneck timing nào không?</div>
+                    <div class="q-why">Nếu avg_days_to_complete tăng đột biến tại một level range nhất định, user đang bị "stuck" quá lâu → mất hứng thú. Pacing quá chậm = churn risk, quá nhanh = hết content sớm.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_level_funnel</code><br>
+                        Fields: <code>level_number</code> <code>avg_days_to_complete</code><br>
+                        Plot: X=level, Y=avg_days → tìm inflection points
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Pacing curve: level 1-10 trong 1 ngày, level 10-20 trong 3 ngày... Nếu level 30-40 mất 15+ ngày → content pacing vấn đề
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-design">Game Design</span>
+                        <span class="q-action-tag tag-product">Product</span><br>
+                        → Rebalance pacing curve: ideal = logarithmic growth<br>
+                        → Thêm daily rewards / challenges tại vùng bottleneck để duy trì engagement<br>
+                        → Xem xét thêm content giữa 2 milestone nếu gap quá lớn
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q1.4 -->
+        <div class="q-card pri-high">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">1.4</div>
+                <div class="q-content">
+                    <div class="q-question">Score distribution tại các level drop có gì bất thường? User fail vì thiếu skill hay vì level design không công bằng?</div>
+                    <div class="q-why">Nếu score distribution rất hẹp (mọi user đều score gần nhau nhưng vẫn fail) → level design vấn đề, không phải skill issue. Nếu distribution rộng → skill gap, có thể giải quyết bằng dynamic difficulty.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_level_funnel</code><br>
+                        Fields: <code>avg_best_score</code> kết hợp fact_levels cho <code>score</code> distribution<br>
+                        So sánh score spread tại cliff levels vs normal levels
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Narrow score spread + high fail = level cần redesign (RNG quá cao, board layout unfair)<br>
+                        Wide score spread = normal skill-based difficulty
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-design">Game Design</span><br>
+                        → Narrow spread levels: regenerate board layouts, reduce RNG factor<br>
+                        → Wide spread levels: add adaptive hint system for lower-skill players<br>
+                        → Cân nhắc dynamic difficulty adjustment (DDA) cho nhóm at_risk
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- THEME 2: RETENTION DIAGNOSTICS — USER LIFECYCLE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="theme-section t-orange">
+    <div class="theme-header">
+        <div class="theme-icon">🔄</div>
+        <div class="theme-title">Theme 2 — Retention Drop Diagnostics</div>
+    </div>
+    <div class="theme-subtitle">Focus: Xác định user rời game ở giai đoạn nào, tại sao, và action cho cả Game Design + Marketing</div>
+
+    <div class="q-grid">
+        <!-- Q2.1 -->
+        <div class="q-card pri-critical">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">2.1</div>
+                <div class="q-content">
+                    <div class="q-question">D1 retention đang ở bao nhiêu? Có đang dưới benchmark 35-45% (casual game) không? Trend tăng hay giảm?</div>
+                    <div class="q-why">D1 retention phản ánh <strong>first impression</strong> — tutorial, UX onboarding, loading time. Nếu D1 < 30% = game mất user ngay ngày đầu, fix onboarding trước khi đổ tiền UA.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_retention_cohorts</code><br>
+                        Fields: <code>d1_retention</code> <code>cohort_date</code> <code>cohort_size</code><br>
+                        Trend: AVG(d1_retention) theo weekly cohort
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        D1 trend line: stable, improving, or declining?<br>
+                        So sánh D1 theo <code>platform</code> — Android vs iOS thường khác nhau<br>
+                        So sánh D1 theo <code>traffic_source</code> — paid users thường D1 thấp hơn organic
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-design">Game Design</span>
+                        <span class="q-action-tag tag-marketing">Marketing</span><br>
+                        → D1 thấp: Review tutorial flow, FTUE (First Time User Experience), loading time<br>
+                        → D1 thấp chỉ ở paid traffic: Creative mismatch → Marketing đổi ad creative<br>
+                        → D1 thấp ở 1 platform: Platform-specific bugs → QA team
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q2.2 -->
+        <div class="q-card pri-critical">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">2.2</div>
+                <div class="q-content">
+                    <div class="q-question">Retention drop lớn nhất xảy ra giữa Dx nào → Dy nào? (D1→D3, D3→D7, D7→D14, D14→D30?)</div>
+                    <div class="q-why">Mỗi giai đoạn drop tương ứng một nguyên nhân khác nhau: D1→D3 = core loop yếu, D3→D7 = thiếu content depth, D7→D14 = thiếu social/meta, D14→D30 = endgame boring.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_retention_cohorts</code><br>
+                        Tính: <code>d3_retention - d1_retention</code>, <code>d7 - d3</code>, <code>d14 - d7</code>, <code>d30 - d14</code><br>
+                        Tìm giai đoạn nào drop % lớn nhất
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Nếu D1→D3 drop 50%+ = core gameplay loop chưa hook được user<br>
+                        Nếu D7→D14 drop nhiều nhất = user hết content/progression trong tuần đầu<br>
+                        Pattern này chỉ ra chính xác GĐ nào cần intervention
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-design">Game Design</span>
+                        <span class="q-action-tag tag-product">Product</span><br>
+                        → D1→D3: Improve core loop — thêm biến thể gameplay, reward cycle ngắn hơn<br>
+                        → D3→D7: Thêm daily quest, streak rewards, new mechanic unlock<br>
+                        → D7→D14: Social features, leaderboard, guild/friends<br>
+                        → D14→D30: Endgame content, seasonal events, prestige system
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q2.3 -->
+        <div class="q-card pri-high">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">2.3</div>
+                <div class="q-content">
+                    <div class="q-question">Nhóm player nào đang chiếm tỉ lệ lớn nhất? Tỉ lệ churned + at_risk hiện tại là bao nhiêu?</div>
+                    <div class="q-why">Nếu churned + at_risk > 50% user base → game đang trong giai đoạn suy thoái. Cần win-back campaigns ngay. Nếu engaged_free lớn → cơ hội convert to payer.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_player_segments</code><br>
+                        Aggregate: <code>COUNT(*) GROUP BY player_segment</code><br>
+                        Also: <code>AVG(active_days)</code> <code>AVG(max_level)</code> per segment
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Segment % pie: casual (lớn nhất?) → at_risk → churned → engaged_free → minnow → dolphin → whale<br>
+                        at_risk segment profile: avg level bao nhiêu, chơi bao lâu rồi bỏ?
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-marketing">Marketing</span>
+                        <span class="q-action-tag tag-product">Product</span><br>
+                        → at_risk: Push notification win-back, limited-time event<br>
+                        → churned: Re-engagement email/ad campaign with new content hook<br>
+                        → engaged_free: Soft paywall experiment, first-purchase discount<br>
+                        → casual: Optimize FTUE to convert → engaged_free
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q2.4 -->
+        <div class="q-card pri-medium">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">2.4</div>
+                <div class="q-content">
+                    <div class="q-question">Retention khác nhau thế nào giữa các traffic source? Nguồn UA nào mang user chất lượng cao nhất?</div>
+                    <div class="q-why">Paid users thường D1 thấp hơn organic. Nếu một nguồn paid traffic có D7 < 5% → đang đốt tiền vô ích. Cần reallocate budget sang source có retention tốt hơn.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_retention_cohorts</code><br>
+                        Breakdown: <code>traffic_source</code><br>
+                        Compare: <code>d1_retention</code> <code>d7_retention</code> <code>d30_retention</code> per source
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Ranking traffic sources by D7 retention quality<br>
+                        Source có volume cao + retention thấp = wasted spend<br>
+                        Source có volume thấp + retention cao = scale opportunity
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-marketing">Marketing</span><br>
+                        → Shift UA budget: giảm spend ở source low-retention, tăng ở high-retention<br>
+                        → Low-retention source: review targeting (wrong audience?) hoặc creative (misleading?)<br>
+                        → Organic retention cao nhất? → Invest in ASO & content marketing
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- THEME 3: MONETIZATION & AD OPTIMIZATION -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="theme-section t-pink">
+    <div class="theme-header">
+        <div class="theme-icon">💰</div>
+        <div class="theme-title">Theme 3 — Monetization & Ad Optimization</div>
+    </div>
+    <div class="theme-subtitle">Focus: Tìm chỗ revenue leak, ad placement gây drop cao nhưng revenue thấp, và cơ hội monetize mới (giống case Bike Stunt)</div>
+
+    <div class="q-grid">
+        <!-- Q3.1 -->
+        <div class="q-card pri-critical">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">3.1</div>
+                <div class="q-content">
+                    <div class="q-question">Revenue mix hiện tại (IAP vs Ad vs Virtual) thế nào? Nguồn nào đang dominate và có sustainable không?</div>
+                    <div class="q-why">Nếu >80% revenue từ ads → rủi ro cao khi ad rates giảm. Nếu IAP quá thấp → monetization design chưa tốt. Cần balance revenue portfolio giống đa dạng hóa đầu tư.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_revenue_daily</code><br>
+                        Aggregate: <code>SUM(total_revenue) GROUP BY revenue_type</code><br>
+                        Trend: revenue_type breakdown over time
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Revenue pie chart: IAP chiếm bao nhiêu %? Ad chiếm bao nhiêu?<br>
+                        Trend: nguồn nào đang tăng/giảm theo thời gian?<br>
+                        Benchmark: casual game thường 60-70% ad, 30-40% IAP
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-monetization">Monetization</span>
+                        <span class="q-action-tag tag-design">Game Design</span><br>
+                        → IAP quá thấp: Review IAP catalog — giá, value proposition, placement timing<br>
+                        → Ad quá dominant: Diversify — thêm IAP bundles, battle pass, cosmetics<br>
+                        → Virtual currency imbalance: Tune economy — sink vs faucet ratio
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q3.2 -->
+        <div class="q-card pri-critical">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">3.2</div>
+                <div class="q-content">
+                    <div class="q-question">Ad impressions xảy ra ở level nào? Level nào có ad frequency cao nhưng retention drop cũng cao → ads đang đuổi user đi?</div>
+                    <div class="q-why"><strong>Giống case Bike Stunt:</strong> vị trí ads nào đang gây drop cao mà doanh thu mang lại không đáng? Cần tìm "toxic ad placements" — nơi ads hurt retention nhiều hơn revenue chúng mang lại.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_level_funnel</code> + <code>mart_revenue_daily</code> (cross-ref fact_levels + fact_revenue)<br>
+                        Cần join: ad events by level → compare ad frequency vs completion_rate drop<br>
+                        Nếu mart chưa có: query <code>fact_events</code> WHERE event_name='ad_impression' GROUP BY param_level
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Matrix: level × ad_impressions × completion_rate_drop<br>
+                        "Toxic zones": high ad frequency + high user drop + low revenue per impression<br>
+                        "Sweet spots": moderate ad frequency + stable retention + decent revenue
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-monetization">Monetization</span>
+                        <span class="q-action-tag tag-design">Game Design</span><br>
+                        → Toxic zones: giảm ad frequency hoặc đổi sang rewarded ads (user opt-in)<br>
+                        → Sweet spots: có thể tăng nhẹ ad frequency<br>
+                        → Suggest kịch bản ads mới: rewarded video cho extra moves, interstitial chỉ sau level win (không phải fail)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q3.3 -->
+        <div class="q-card pri-high">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">3.3</div>
+                <div class="q-content">
+                    <div class="q-question">Payer conversion rate hiện tại bao nhiêu? User chuyển sang trả tiền tại thời điểm nào trong lifecycle?</div>
+                    <div class="q-why">Nếu conversion < 2% → paywall chưa compelling. Biết user convert ở ngày thứ mấy sau install → optimize timing hiển thị offer.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_daily_kpis</code>: <code>payer_conversion_rate</code> trend<br>
+                        <code>mart_player_segments</code>: whale + dolphin + minnow → first purchase timing<br>
+                        Cross-ref: dim_users.install_date vs fact_revenue.event_date
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Conversion rate trend: improving or declining?<br>
+                        First purchase timing distribution: Day 0? Day 3? Day 7?<br>
+                        Conversion by segment: casual vs engaged_free → ai convert?
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-monetization">Monetization</span>
+                        <span class="q-action-tag tag-marketing">Marketing</span><br>
+                        → Low conversion: Starter pack ($0.99) tại peak conversion day<br>
+                        → Late conversion (>D7): Earlier soft IAP touchpoints cần thiết<br>
+                        → engaged_free lớn nhưng không convert: A/B test IAP pricing & value
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q3.4 -->
+        <div class="q-card pri-high">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">3.4</div>
+                <div class="q-content">
+                    <div class="q-question">Whale users (top spenders) có profile gì chung? Level bao nhiêu, chơi bao lâu, từ market nào?</div>
+                    <div class="q-why">Whale chiếm phần lớn IAP revenue. Hiểu profile whale → optimize để tìm & nuôi thêm whales tương tự. Nếu whale chỉ đến từ 1-2 markets → opportunity ở các market khác.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_player_segments</code> WHERE player_segment='whale'<br>
+                        Profile: <code>avg(max_level)</code> <code>avg(active_days)</code> <code>avg(total_engagement_minutes)</code> <code>geo_country</code>
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Whale profile: level 50+, active 20+ days, platform X, from country Y<br>
+                        Compare with dolphin profile → what's the tipping point from dolphin → whale?
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-marketing">Marketing</span>
+                        <span class="q-action-tag tag-monetization">Monetization</span><br>
+                        → Lookalike audience: Target user giống whale profile trên paid UA<br>
+                        → Dolphin → Whale: VIP program, exclusive content, progressive discounts<br>
+                        → Under-indexed markets with whale potential: localize + UA push
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- THEME 4: SESSION & ENGAGEMENT HEALTH -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="theme-section t-blue">
+    <div class="theme-header">
+        <div class="theme-icon">⏱️</div>
+        <div class="theme-title">Theme 4 — Session & Engagement Health</div>
+    </div>
+    <div class="theme-subtitle">Focus: User chơi có "sâu" không? Session chất lượng hay chỉ open-close? Dấu hiệu engagement giảm sớm.</div>
+
+    <div class="q-grid">
+        <!-- Q4.1 -->
+        <div class="q-card pri-high">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">4.1</div>
+                <div class="q-content">
+                    <div class="q-question">Tỉ lệ sessions dưới 1 phút (sessions_under_1min) chiếm bao nhiêu %? Trend tăng hay giảm?</div>
+                    <div class="q-why">Session < 1 phút = user mở game rồi đóng ngay (bounce). Nếu tỉ lệ này > 30% → nghiêm trọng: loading quá lâu, crash, hoặc push notification không lead đến content hay.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_session_stats</code><br>
+                        Calculated: <code>sessions_under_1min / total_sessions</code><br>
+                        Trend: weekly average
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Bounce session % trend — stable ≈ structural issue, increasing = regression/bug<br>
+                        Breakdown by platform → crash issue trên specific device?
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-design">Game Design</span>
+                        <span class="q-action-tag tag-product">Product</span><br>
+                        → High bounce: Check loading time, crash logs, first screen appeal<br>
+                        → Platform-specific: Device compatibility issue → QA<br>
+                        → Push notification bounce: Improve notification → content pathway
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q4.2 -->
+        <div class="q-card pri-high">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">4.2</div>
+                <div class="q-content">
+                    <div class="q-question">Engagement ratio (engagement_sec / duration_sec) bao nhiêu? User idle bao nhiêu % thời gian trong session?</div>
+                    <div class="q-why">Ratio < 50% = user dành nửa thời gian không tương tác (xem ads? waiting? confused?). Đây là proxy cho UX quality — cao = flow tốt, thấp = friction nhiều.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_session_stats</code> hoặc <code>mart_daily_kpis</code><br>
+                        Calc: <code>avg_engagement_sec / avg_duration_sec</code><br>
+                        Trend: daily
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Engagement ratio 60-80% = healthy<br>
+                        < 50% = too much idle time → investigate: long loading, forced ads, confusing menus<br>
+                        Drop over time = UX degradation
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-design">Game Design</span>
+                        <span class="q-action-tag tag-product">Product</span><br>
+                        → Low ratio: Reduce loading screens, minimize forced wait times<br>
+                        → Declining ratio: Audit recent version updates for added friction<br>
+                        → Compare by platform — iOS vs Android UX parity check
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q4.3 -->
+        <div class="q-card pri-medium">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">4.3</div>
+                <div class="q-content">
+                    <div class="q-question">Sessions per DAU có tương quan với retention không? User chơi nhiều session/ngày có retain tốt hơn?</div>
+                    <div class="q-why">Nếu high-frequency users cũng là high-retention users → sessions_per_dau là leading indicator. Có thể dùng để early detect churn khi sessions/dau giảm.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_daily_kpis</code>: <code>sessions_per_dau</code> trend<br>
+                        Cross: <code>mart_player_segments</code> → avg sessions per segment
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        engaged_free: sessions/day ~3-4x vs casual: ~1.2x<br>
+                        Tìm "magic number" session frequency → retention threshold
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-design">Game Design</span>
+                        <span class="q-action-tag tag-product">Product</span><br>
+                        → Tìm magic number (vd: 3 sessions/day) → design push/reward tại moment 2 sessions để đẩy lên 3<br>
+                        → Energy system / daily login rewards to drive repeat sessions
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- THEME 5: GEO & UA EFFECTIVENESS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="theme-section t-teal">
+    <div class="theme-header">
+        <div class="theme-icon">🌍</div>
+        <div class="theme-title">Theme 5 — Geo & UA Effectiveness</div>
+    </div>
+    <div class="theme-subtitle">Focus: Market nào đáng đầu tư? Country nào có user quality cao nhất? Budget allocation cho Marketing</div>
+
+    <div class="q-grid">
+        <!-- Q5.1 -->
+        <div class="q-card pri-high">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">5.1</div>
+                <div class="q-content">
+                    <div class="q-question">Top 10 countries theo revenue — có khớp với top 10 theo user count không? Country nào high-users nhưng low-revenue (monetization gap)?</div>
+                    <div class="q-why">Country có nhiều user nhưng payer_rate thấp = chưa monetize tốt ở market đó. Có thể do pricing không phù hợp purchasing power, hoặc IAP catalog chưa localized.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_geo_stats</code><br>
+                        Rank by: <code>total_users</code> vs <code>total_revenue</code><br>
+                        Key: <code>payer_rate</code> gap between top-user vs top-revenue countries
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Mismatch ranking = opportunity: vd India #1 users nhưng #20 revenue → pricing issue<br>
+                        US/Japan/Korea thường ARPU cao → đáng UA invest
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-marketing">Marketing</span>
+                        <span class="q-action-tag tag-monetization">Monetization</span><br>
+                        → High-user low-revenue: Regional pricing (India ₹, SEA lower price points)<br>
+                        → High-ARPU countries: Increase UA spend, localize ads<br>
+                        → Consider geo-specific IAP bundles & ad mediation
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q5.2 -->
+        <div class="q-card pri-medium">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">5.2</div>
+                <div class="q-content">
+                    <div class="q-question">Engagement quality (avg_active_days, avg_level, avg_engagement_min) khác nhau thế nào giữa các geo regions?</div>
+                    <div class="q-why">Không phải market có nhiều user nhất là tốt nhất. Market có avg_active_days cao + avg_level cao = user chất lượng thực sự. Đây là leading indicator cho LTV.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_geo_stats</code><br>
+                        Fields: <code>avg_active_days</code> <code>avg_level</code> <code>avg_engagement_min</code><br>
+                        Rank countries by composite quality score
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Insight kỳ vọng</div>
+                    <div class="q-meta-value">
+                        Quality ranking vs volume ranking → khác nhau = targeting opportunity<br>
+                        Continent-level patterns: Americas vs Europe vs Asia engagement styles
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Action Brief</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-marketing">Marketing</span><br>
+                        → High quality + low volume = under-tapped market → UA campaign<br>
+                        → Low quality + high volume = improve FTUE for that market, or adjust targeting<br>
+                        → Platform preference by geo → focus Android UA in emerging markets
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- THEME 6: CROSS-CUTTING / PRODUCT HEALTH PULSE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="theme-section t-green">
+    <div class="theme-header">
+        <div class="theme-icon">🩺</div>
+        <div class="theme-title">Theme 6 — Product Health Pulse (Daily/Weekly Check)</div>
+    </div>
+    <div class="theme-subtitle">Focus: Câu hỏi PO nên check hàng ngày/tuần để phát hiện sớm anomaly — "early warning system"</div>
+
+    <div class="q-grid">
+        <!-- Q6.1 -->
+        <div class="q-card pri-critical">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">6.1</div>
+                <div class="q-content">
+                    <div class="q-question">DAU hôm nay so với 7-day moving average thế nào? Có anomaly (drop >15% hoặc spike >25%) không?</div>
+                    <div class="q-why"><strong>Morning health check #1.</strong> DAU spike = viral moment hoặc UA campaign hit. DAU drop = server issue, bad update, hoặc market event. Cần phát hiện trong vài giờ, không phải vài ngày.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_daily_kpis</code><br>
+                        <code>dau</code> vs 7-day rolling AVG<br>
+                        Alert threshold: ±15%
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Check Frequency</div>
+                    <div class="q-meta-value">
+                        <strong>Daily</strong> — mỗi sáng<br>
+                        Set up Looker Studio email schedule hoặc alert
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Escalation</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-product">Product</span>
+                        <span class="q-action-tag tag-data">Data</span><br>
+                        → Drop: Check crash reports, server status, recent deploy<br>
+                        → Spike: Identify source → capitalize if organic, validate if paid
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q6.2 -->
+        <div class="q-card pri-critical">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">6.2</div>
+                <div class="q-content">
+                    <div class="q-question">Revenue hôm nay có on-track so với weekly/monthly target không?</div>
+                    <div class="q-why"><strong>Morning health check #2.</strong> Revenue lagging = cần intervention (sale event, new offer). Revenue exceeding = understand why → replicate.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_daily_kpis</code>: <code>total_revenue</code><br>
+                        <code>mart_revenue_daily</code>: breakdown by type<br>
+                        Cumulative sum vs target line
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Check Frequency</div>
+                    <div class="q-meta-value">
+                        <strong>Daily</strong> — revenue tracking<br>
+                        <strong>Weekly</strong> — pace vs monthly target
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Escalation</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-monetization">Monetization</span>
+                        <span class="q-action-tag tag-marketing">Marketing</span><br>
+                        → Behind target: Flash sale, limited offer, ad placement review<br>
+                        → Ahead: Analyze driver → scale what's working
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q6.3 -->
+        <div class="q-card pri-high">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">6.3</div>
+                <div class="q-content">
+                    <div class="q-question">Stickiness (DAU/MAU) trend trong 4 tuần gần nhất — tăng, giảm, hay flat?</div>
+                    <div class="q-why"><strong>Weekly health check.</strong> Stickiness giảm dần = game đang mất grip — user vẫn trong MAU nhưng không active daily. Đây là leading indicator cho churn wave sắp đến.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_daily_kpis</code>: <code>stickiness</code><br>
+                        7-day rolling average<br>
+                        Benchmark: casual game 15-25%
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Check Frequency</div>
+                    <div class="q-meta-value">
+                        <strong>Weekly</strong><br>
+                        Compare week-over-week
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Escalation</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-design">Game Design</span>
+                        <span class="q-action-tag tag-product">Product</span><br>
+                        → Declining: Review daily hooks — daily rewards, notifications, live events<br>
+                        → Below 15%: Urgent — core loop may not be compelling enough<br>
+                        → Stable/growing: Healthy — maintain current strategy
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q6.4 -->
+        <div class="q-card pri-medium">
+            <div class="q-priority"></div>
+            <div class="q-top">
+                <div class="q-number">6.4</div>
+                <div class="q-content">
+                    <div class="q-question">New install volume tuần này so với tuần trước? Cost per Install có đang tăng không?</div>
+                    <div class="q-why"><strong>Weekly UA check.</strong> Install giảm + DAU giảm = acquisition problem. Install stable + DAU giảm = retention problem. Phân biệt gốc rễ vấn đề để assign đúng team.</div>
+                </div>
+            </div>
+            <div class="q-bottom">
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Data Source & Fields</div>
+                    <div class="q-meta-value">
+                        <code>mart_daily_kpis</code>: <code>new_users</code> weekly sum<br>
+                        CPI data từ ad network (ngoài mart — cần external source)
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Check Frequency</div>
+                    <div class="q-meta-value">
+                        <strong>Weekly</strong><br>
+                        Monday morning review
+                    </div>
+                </div>
+                <div class="q-meta-block">
+                    <div class="q-meta-label">Escalation</div>
+                    <div class="q-meta-value">
+                        <span class="q-action-tag tag-marketing">Marketing</span><br>
+                        → Install drop + CPI stable: Market saturation → new geo/creative<br>
+                        → Install stable + CPI rising: Competition → differentiate creative<br>
+                        → Organic ratio check: healthy if organic > 40% of total installs
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════ SUMMARY TABLE ═══════════════════ -->
+<div style="margin-bottom:40px;">
+    <h3 style="font-size:18px; font-weight:700; margin-bottom:16px; color:var(--text);">Summary — Question → Team Routing</h3>
+    <div style="overflow-x:auto;">
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th>Theme</th>
+                    <th># Questions</th>
+                    <th>Primary Mart Tables</th>
+                    <th>Brief → Team</th>
+                    <th>Check Cadence</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="color:var(--purple);">1. Level Drop & Difficulty</td>
+                    <td>4</td>
+                    <td><code style="background:var(--purple-soft); color:var(--purple); padding:2px 6px; border-radius:3px; font-size:11px;">mart_level_funnel</code></td>
+                    <td>Game Design (primary)</td>
+                    <td>Bi-weekly / After update</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--orange);">2. Retention Diagnostics</td>
+                    <td>4</td>
+                    <td><code style="background:var(--orange-soft); color:var(--orange); padding:2px 6px; border-radius:3px; font-size:11px;">mart_retention_cohorts</code> <code style="background:var(--orange-soft); color:var(--orange); padding:2px 6px; border-radius:3px; font-size:11px;">mart_player_segments</code></td>
+                    <td>Game Design + Marketing</td>
+                    <td>Weekly</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--pink);">3. Monetization & Ads</td>
+                    <td>4</td>
+                    <td><code style="background:var(--pink-soft); color:var(--pink); padding:2px 6px; border-radius:3px; font-size:11px;">mart_revenue_daily</code> <code style="background:var(--pink-soft); color:var(--pink); padding:2px 6px; border-radius:3px; font-size:11px;">mart_player_segments</code></td>
+                    <td>Monetization + Marketing</td>
+                    <td>Weekly</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--blue);">4. Session & Engagement</td>
+                    <td>3</td>
+                    <td><code style="background:var(--blue-soft); color:var(--blue); padding:2px 6px; border-radius:3px; font-size:11px;">mart_session_stats</code> <code style="background:var(--blue-soft); color:var(--blue); padding:2px 6px; border-radius:3px; font-size:11px;">mart_daily_kpis</code></td>
+                    <td>Game Design + Product</td>
+                    <td>Weekly</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--teal);">5. Geo & UA</td>
+                    <td>2</td>
+                    <td><code style="background:var(--teal-soft); color:var(--teal); padding:2px 6px; border-radius:3px; font-size:11px;">mart_geo_stats</code></td>
+                    <td>Marketing (primary)</td>
+                    <td>Monthly</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--green);">6. Product Health Pulse</td>
+                    <td>4</td>
+                    <td><code style="background:var(--green-soft); color:var(--green); padding:2px 6px; border-radius:3px; font-size:11px;">mart_daily_kpis</code></td>
+                    <td>PO daily check → Route</td>
+                    <td>Daily / Weekly</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="footer">
+    Flood-It — PO Diagnostic Question Framework &bull; 21 Actionable Questions across 6 Themes &bull; Mapped to game_marts layer
+</div>
+
+</body>
+</html>

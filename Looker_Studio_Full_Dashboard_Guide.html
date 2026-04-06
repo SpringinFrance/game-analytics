@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Looker Studio — Full Dashboard Build Guide (3 Views)</title>
+<style>
+  :root {
+    --bg: #0f1117; --card: #1a1d27; --border: #2a2d3a;
+    --text: #e2e8f0; --muted: #94a3b8; --accent: #818cf8;
+    --severe: #f87171; --warning: #fbbf24; --normal: #60a5fa;
+    --green: #34d399; --purple: #a78bfa; --orange: #fb923c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 2rem; max-width: 1100px; margin: auto; }
+  h1 { font-size: 1.8rem; margin-bottom: 0.3rem; background: linear-gradient(90deg, var(--accent), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { color: var(--muted); margin-bottom: 2rem; font-size: 0.95rem; }
+  h2 { font-size: 1.35rem; color: var(--accent); margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.1rem; color: var(--green); margin: 1.5rem 0 0.7rem; }
+  h4 { font-size: 0.95rem; color: var(--orange); margin: 1rem 0 0.5rem; }
+  p { margin-bottom: 0.8rem; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; }
+  .step-card { background: var(--card); border-left: 4px solid var(--accent); border-radius: 0 12px 12px 0; padding: 1.2rem 1.5rem; margin: 0.8rem 0; }
+  .step-card.green { border-left-color: var(--green); }
+  .step-card.orange { border-left-color: var(--orange); }
+  .step-card.red { border-left-color: var(--severe); }
+  .step-card.purple { border-left-color: var(--purple); }
+  .step-num { display: inline-block; background: var(--accent); color: #fff; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-size: 0.85rem; font-weight: bold; margin-right: 8px; }
+  .step-num.green { background: var(--green); }
+  .step-num.orange { background: var(--orange); }
+  .step-num.red { background: var(--severe); }
+  .step-num.purple { background: var(--purple); }
+  code { background: #252836; padding: 2px 8px; border-radius: 4px; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.88rem; color: var(--green); }
+  pre { background: #252836; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.2rem; overflow-x: auto; margin: 0.8rem 0; font-size: 0.85rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.88rem; }
+  th { background: #252836; color: var(--accent); text-align: left; padding: 10px 12px; border: 1px solid var(--border); }
+  td { padding: 8px 12px; border: 1px solid var(--border); }
+  tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; margin-right: 4px; }
+  .tag-severe { background: rgba(248,113,113,0.15); color: var(--severe); }
+  .tag-warning { background: rgba(251,191,36,0.15); color: var(--warning); }
+  .tag-normal { background: rgba(96,165,250,0.15); color: var(--normal); }
+  .tag-dim { background: rgba(129,140,248,0.15); color: var(--accent); }
+  .tag-metric { background: rgba(52,211,153,0.15); color: var(--green); }
+  .field-box { display: inline-block; background: #252836; border: 1px solid var(--border); border-radius: 6px; padding: 4px 12px; margin: 2px 4px; font-family: monospace; font-size: 0.85rem; }
+  .highlight { background: rgba(129,140,248,0.1); border: 1px solid rgba(129,140,248,0.3); border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0; }
+  .warn-box { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.3); border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0; }
+  .tip-box { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.3); border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0; }
+  .overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
+  .overview-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; text-align: center; }
+  .overview-item h4 { text-align: center; margin-bottom: 0.5rem; }
+  .overview-item .chart-type { font-size: 0.85rem; color: var(--muted); }
+  .arrow { color: var(--accent); margin: 0 0.3rem; }
+  .nav-demo { display: flex; gap: 0; margin: 1rem 0; }
+  .nav-tab { padding: 10px 20px; background: #252836; border: 1px solid var(--border); color: var(--muted); font-size: 0.85rem; cursor: default; }
+  .nav-tab:first-child { border-radius: 8px 0 0 8px; }
+  .nav-tab:last-child { border-radius: 0 8px 8px 0; }
+  .nav-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .toc { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc ol { padding-left: 1.5rem; }
+  .toc li { margin: 0.4rem 0; }
+  .mapping-row { display: grid; grid-template-columns: 140px 1fr; gap: 0.5rem; margin: 0.3rem 0; align-items: center; }
+  .mapping-label { color: var(--muted); font-size: 0.85rem; text-align: right; padding-right: 8px; }
+  .color-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Looker Studio — Full Dashboard Build Guide</h1>
+<p class="subtitle">Flood-It Level Analysis: 3 Views + Range Filter + Reference Lines &bull; Data source: <code>mart_level_funnel_enriched</code></p>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <strong>Mục lục</strong>
+  <ol>
+    <li><a href="#prereq">Prerequisites & Data Source</a></li>
+    <li><a href="#architecture">Kiến trúc Dashboard (3 Pages)</a></li>
+    <li><a href="#global">Global Setup: Range Filter + Navigation Tabs</a></li>
+    <li><a href="#page1">Page 1 — Completion Funnel</a></li>
+    <li><a href="#page2">Page 2 — Drop Rate Spikes</a></li>
+    <li><a href="#page3">Page 3 — Overlay (Drop + Attempts)</a></li>
+    <li><a href="#style">Styling & Color Mapping</a></li>
+    <li><a href="#extras">Bonus: Scorecards, Tables & Tooltips</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="prereq">1. Prerequisites & Data Source</h2>
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="step-card">
+  <span class="step-num">1</span> <strong>BigQuery View đã tạo</strong>
+  <p style="margin-top:0.5rem">File <code>SQL_Create_View_Level_Funnel_Enriched.sql</code> đã được chạy trên BigQuery Console, tạo view <code>game_marts.mart_level_funnel_enriched</code>.</p>
+</div>
+
+<div class="step-card green">
+  <span class="step-num green">2</span> <strong>Connect Looker Studio → BigQuery</strong>
+  <p style="margin-top:0.5rem">Looker Studio → <strong>Add data</strong> → <strong>BigQuery</strong> → chọn project → dataset <code>game_marts</code> → chọn <strong>mart_level_funnel_enriched</strong> → <strong>Add</strong></p>
+</div>
+
+<div class="highlight">
+  <strong>Fields có sẵn trong data source:</strong><br><br>
+  <span class="tag tag-dim">Dimensions</span>
+  <span class="field-box">level_number</span>
+  <span class="field-box">severity</span>
+  <span class="field-box">severity_order</span>
+  <br><br>
+  <span class="tag tag-metric">Metrics</span>
+  <span class="field-box">completion_rate_pct</span>
+  <span class="field-box">drop_rate_pct_display</span>
+  <span class="field-box">avg_attempts</span>
+  <span class="field-box">avg_drop_rate_pct</span>
+  <span class="field-box">difficulty_index</span>
+  <span class="field-box">users_completed</span>
+  <span class="field-box">players_lost</span>
+  <span class="field-box">relative_drop_pct</span>
+  <span class="field-box">pacing_gap</span>
+  <span class="field-box">drop_vs_avg</span>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="architecture">2. Kiến trúc Dashboard (3 Pages)</h2>
+<!-- ═══════════════════════════════════════════ -->
+
+<p>Mỗi view trong demo tương ứng với <strong>1 page</strong> riêng trong Looker Studio. Navigation tabs được tạo bằng text/shape elements có link đến từng page.</p>
+
+<div class="overview-grid">
+  <div class="overview-item">
+    <h4 style="color: var(--normal);">Page 1</h4>
+    <strong>Completion Funnel</strong>
+    <p class="chart-type">Bar Chart</p>
+    <p style="font-size:0.82rem; color:var(--muted)">Y = completion_rate_pct<br>Breakdown = severity</p>
+  </div>
+  <div class="overview-item">
+    <h4 style="color: var(--severe);">Page 2</h4>
+    <strong>Drop Rate Spikes</strong>
+    <p class="chart-type">Bar Chart + Reference Lines</p>
+    <p style="font-size:0.82rem; color:var(--muted)">Y = drop_rate_pct_display<br>Ref = AVG & 2×AVG lines</p>
+  </div>
+  <div class="overview-item">
+    <h4 style="color: var(--purple);">Page 3</h4>
+    <strong>Overlay (Drop + Attempts)</strong>
+    <p class="chart-type">Combo Chart (Bar + Line)</p>
+    <p style="font-size:0.82rem; color:var(--muted)">Bars = drop_rate<br>Line = avg_attempts (2nd axis)</p>
+  </div>
+</div>
+
+<!-- Demo nav tabs visual -->
+<p>Giao diện navigation sẽ trông như thế này:</p>
+<div class="nav-demo">
+  <div class="nav-tab active">Completion Funnel</div>
+  <div class="nav-tab">Drop Rate Spikes</div>
+  <div class="nav-tab">Overlay (Drop + Attempts)</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="global">3. Global Setup: Range Filter + Navigation Tabs</h2>
+<!-- ═══════════════════════════════════════════ -->
+
+<h3>3A. Tạo Range Filter (Levels: 1 — 50)</h3>
+
+<div class="step-card">
+  <span class="step-num">1</span> <strong>Tạo 2 Parameters</strong>
+  <p style="margin-top:0.5rem"><strong>Resource</strong> → <strong>Manage parameters</strong> → <strong>Add a parameter</strong></p>
+  <table>
+    <tr><th>Setting</th><th>Parameter 1</th><th>Parameter 2</th></tr>
+    <tr><td>Parameter name</td><td><code>level_from</code></td><td><code>level_to</code></td></tr>
+    <tr><td>Data type</td><td>Number</td><td>Number</td></tr>
+    <tr><td>Default value</td><td><code>1</code></td><td><code>50</code></td></tr>
+  </table>
+</div>
+
+<div class="step-card green">
+  <span class="step-num green">2</span> <strong>Tạo Calculated Field filter</strong>
+  <p style="margin-top:0.5rem">Vào <strong>Resource</strong> → <strong>Manage added data sources</strong> → click <strong>EDIT</strong> trên data source → <strong>Add a field</strong>:</p>
+  <pre><code>Field name:  level_in_range
+
+Formula:
+CASE
+  WHEN level_number >= level_from
+   AND level_number <= level_to
+  THEN "yes"
+  ELSE "no"
+END</code></pre>
+</div>
+
+<div class="step-card orange">
+  <span class="step-num orange">3</span> <strong>Thêm 2 Controls lên page</strong>
+  <p style="margin-top:0.5rem"><strong>Add a control</strong> → <strong>Drop-down list</strong></p>
+  <table>
+    <tr><th>Property</th><th>Control 1 (From)</th><th>Control 2 (To)</th></tr>
+    <tr><td>Control field</td><td><code>level_from</code> (parameter)</td><td><code>level_to</code> (parameter)</td></tr>
+    <tr><td>Position</td><td>Bên trái</td><td>Bên phải</td></tr>
+  </table>
+  <p style="margin-top:0.5rem">Thêm <strong>Text element</strong> "Levels:" phía trước và "—" ở giữa 2 controls.</p>
+</div>
+
+<div class="step-card red">
+  <span class="step-num red">4</span> <strong>Apply filter cho EVERY chart</strong>
+  <p style="margin-top:0.5rem">Với mỗi chart/table trên dashboard:</p>
+  <p>Click chart → tab <strong>Setup</strong> → <strong>Add a filter</strong> →</p>
+  <pre><code>Filter name:  Level Range Filter
+Condition:    Include  |  level_in_range  |  Equal to (=)  |  yes</code></pre>
+</div>
+
+<div class="tip-box">
+  <strong>💡 Tip:</strong> Sau khi setup xong page 1, dùng <code>Ctrl+C / Ctrl+V</code> copy toàn bộ controls (filter + nav tabs) sang page 2 và 3 — đặt cùng vị trí để tạo trải nghiệm nhất quán.
+</div>
+
+<h3>3B. Tạo Navigation Tabs (giả lập tab switching)</h3>
+
+<p>Looker Studio không có native tab component, nhưng có thể tạo bằng <strong>Text/Shape elements với page links</strong>:</p>
+
+<div class="step-card">
+  <span class="step-num">1</span> <strong>Tạo 3 Rounded Rectangle shapes</strong>
+  <p style="margin-top:0.5rem"><strong>Insert</strong> → <strong>Shape</strong> → vẽ 3 hình chữ nhật bo góc, đặt cạnh nhau ngang.</p>
+  <table>
+    <tr><th>Shape</th><th>Text</th><th>Link to</th><th>Style (trên page hiện tại)</th><th>Style (trên page khác)</th></tr>
+    <tr><td>Tab 1</td><td>Completion Funnel</td><td>Page 1</td><td>Fill: accent color, Text: white</td><td>Fill: dark, Text: grey</td></tr>
+    <tr><td>Tab 2</td><td>Drop Rate Spikes</td><td>Page 2</td><td>Fill: accent color, Text: white</td><td>Fill: dark, Text: grey</td></tr>
+    <tr><td>Tab 3</td><td>Overlay (Drop + Attempts)</td><td>Page 3</td><td>Fill: accent color, Text: white</td><td>Fill: dark, Text: grey</td></tr>
+  </table>
+</div>
+
+<div class="step-card green">
+  <span class="step-num green">2</span> <strong>Add link vào shape</strong>
+  <p style="margin-top:0.5rem">Right-click shape → <strong>Add link</strong> → chọn page report tương ứng (chọn từ danh sách pages, không phải URL).</p>
+</div>
+
+<div class="step-card orange">
+  <span class="step-num orange">3</span> <strong>Highlight active tab</strong>
+  <p style="margin-top:0.5rem">Trên <strong>Page 1</strong>: Tab "Completion Funnel" có fill đậm (active), 2 tab còn lại fill nhạt.<br>
+  Trên <strong>Page 2</strong>: Tab "Drop Rate Spikes" active, 2 tab còn lại nhạt.<br>
+  Trên <strong>Page 3</strong>: Tab "Overlay" active, 2 tab còn lại nhạt.</p>
+  <p>→ Copy 3 tabs sang mỗi page, sau đó đổi fill color của tab tương ứng.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="page1">4. Page 1 — Completion Funnel</h2>
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="card">
+  <h4>Mục tiêu</h4>
+  <p>Hiển thị <strong>completion rate (%)</strong> của mỗi level, giảm dần từ level 1 → N. Bars tô màu theo severity (severe/warning/normal) để highlight problem levels.</p>
+</div>
+
+<h3>Bước 1: Add Bar Chart</h3>
+
+<div class="step-card">
+  <span class="step-num">1</span> <strong>Add a chart</strong> → chọn <strong>"Bar chart"</strong> (horizontal hoặc vertical — recommend <strong>vertical/column</strong> chart)
+</div>
+
+<h3>Bước 2: Tab Setup — Field Mapping</h3>
+
+<div class="step-card green">
+  <span class="step-num green">2</span> <strong>Cấu hình fields</strong>
+  <table>
+    <tr><th>Slot</th><th>Field</th><th>Ghi chú</th></tr>
+    <tr>
+      <td><strong>Dimension</strong></td>
+      <td><span class="field-box">level_number</span></td>
+      <td>Trục X — mỗi bar = 1 level</td>
+    </tr>
+    <tr>
+      <td><strong>Breakdown Dimension</strong></td>
+      <td><span class="field-box">severity</span></td>
+      <td>Tô màu bar theo severity</td>
+    </tr>
+    <tr>
+      <td><strong>Metric</strong></td>
+      <td><span class="field-box">completion_rate_pct</span></td>
+      <td>Aggregation = <strong>MAX</strong> (hoặc AVG, vì mỗi level chỉ có 1 row)</td>
+    </tr>
+    <tr>
+      <td><strong>Sort</strong></td>
+      <td><span class="field-box">level_number</span> <strong>Ascending</strong></td>
+      <td>Level 1 → N từ trái sang phải</td>
+    </tr>
+    <tr>
+      <td><strong>Rows per page</strong></td>
+      <td><code>100</code></td>
+      <td>⚠️ Tăng lên để hiện TẤT CẢ levels (default là 10)</td>
+    </tr>
+  </table>
+</div>
+
+<h3>Bước 3: Tab Setup — Filter</h3>
+
+<div class="step-card orange">
+  <span class="step-num orange">3</span> <strong>Add filter</strong> (đã tạo ở bước Global)
+  <pre><code>Include  |  level_in_range  |  Equal to (=)  |  yes</code></pre>
+</div>
+
+<h3>Bước 4: Tab Style</h3>
+
+<div class="step-card purple">
+  <span class="step-num purple">4</span> <strong>Style settings</strong>
+  <table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td>Bar — Color by severity</td><td><span class="color-swatch" style="background:#f87171"></span> severe = <code>#F87171</code>, <span class="color-swatch" style="background:#fbbf24"></span> warning = <code>#FBBF24</code>, <span class="color-swatch" style="background:#60a5fa"></span> normal = <code>#60A5FA</code></td></tr>
+    <tr><td>Stacked bars</td><td><strong>OFF</strong> (không stack, mỗi bar là 1 severity)</td></tr>
+    <tr><td>Show data labels</td><td>Optional — ON nếu muốn hiện % trên mỗi bar</td></tr>
+    <tr><td>Y-axis label</td><td>"Completion Rate (%)"</td></tr>
+    <tr><td>X-axis label</td><td>"Level Number"</td></tr>
+    <tr><td>Background</td><td>Dark theme: <code>#1a1d27</code></td></tr>
+    <tr><td>Font color</td><td><code>#e2e8f0</code></td></tr>
+  </table>
+</div>
+
+<div class="highlight">
+  <strong>Chart preview:</strong> Bars giảm dần từ ~100% (level 1) xuống ~5% (level cuối). Severe levels (drop rate > 2× AVG) sẽ hiện <span style="color:var(--severe)">đỏ</span>, warning levels hiện <span style="color:var(--warning)">vàng</span>, normal levels hiện <span style="color:var(--normal)">xanh</span>.
+</div>
+
+<h3>Bước 5: Thêm Scorecards (Optional nhưng recommend)</h3>
+
+<p>Thêm 3-4 scorecards phía trên chart:</p>
+<table>
+  <tr><th>Scorecard</th><th>Metric</th><th>Aggregation</th></tr>
+  <tr><td>Total Levels</td><td><code>level_number</code></td><td>COUNT DISTINCT</td></tr>
+  <tr><td>Total Players</td><td><code>total_users</code></td><td>MAX</td></tr>
+  <tr><td>Avg Completion Rate</td><td><code>completion_rate_pct</code></td><td>AVG</td></tr>
+  <tr><td>Problem Levels</td><td>Dùng filter severity = severe → COUNT</td><td>COUNT DISTINCT</td></tr>
+</table>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="page2">5. Page 2 — Drop Rate Spikes</h2>
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="card">
+  <h4>Mục tiêu</h4>
+  <p>Hiển thị <strong>drop rate (%)</strong> tại mỗi level. Reference lines tại AVG drop rate và 2×AVG (ngưỡng severe). Bars tô màu theo severity để user nhìn thấy ngay spike levels.</p>
+</div>
+
+<h3>Bước 1: Add Bar Chart</h3>
+
+<div class="step-card">
+  <span class="step-num">1</span> <strong>Add a chart</strong> → <strong>"Bar chart"</strong> (column chart dọc)
+</div>
+
+<h3>Bước 2: Tab Setup — Field Mapping</h3>
+
+<div class="step-card green">
+  <span class="step-num green">2</span> <strong>Cấu hình fields</strong>
+  <table>
+    <tr><th>Slot</th><th>Field</th><th>Ghi chú</th></tr>
+    <tr>
+      <td><strong>Dimension</strong></td>
+      <td><span class="field-box">level_number</span></td>
+      <td>Trục X</td>
+    </tr>
+    <tr>
+      <td><strong>Breakdown Dimension</strong></td>
+      <td><span class="field-box">severity</span></td>
+      <td>Tô màu bars</td>
+    </tr>
+    <tr>
+      <td><strong>Metric</strong></td>
+      <td><span class="field-box">drop_rate_pct_display</span></td>
+      <td>Aggregation = <strong>MAX</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Sort</strong></td>
+      <td><span class="field-box">level_number</span> <strong>Ascending</strong></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><strong>Rows per page</strong></td>
+      <td><code>100</code></td>
+      <td>Hiện tất cả levels</td>
+    </tr>
+  </table>
+</div>
+
+<h3>Bước 3: Tab Style — Reference Lines (quan trọng!)</h3>
+
+<div class="step-card orange">
+  <span class="step-num orange">3</span> <strong>Thêm Reference Lines</strong>
+  <p style="margin-top:0.5rem">Click chart → tab <strong>Style</strong> → kéo xuống mục <strong>"Reference lines"</strong> → <strong>Add a reference line</strong>:</p>
+
+  <h4>Reference Line 1: AVG Drop Rate</h4>
+  <table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td>Type</td><td><strong>Constant</strong></td></tr>
+    <tr><td>Value</td><td>Nhập giá trị AVG drop rate từ data (kiểm tra trong BigQuery, ví dụ: <code>1.87</code>)</td></tr>
+    <tr><td>Label</td><td><code>AVG ({value}%)</code></td></tr>
+    <tr><td>Line color</td><td><code>#818CF8</code> (tím nhạt) — dashed</td></tr>
+  </table>
+
+  <h4>Reference Line 2: 2× AVG (Severe Threshold)</h4>
+  <table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td>Type</td><td><strong>Constant</strong></td></tr>
+    <tr><td>Value</td><td>2× AVG drop rate (ví dụ: <code>3.74</code>)</td></tr>
+    <tr><td>Label</td><td><code>2× AVG ({value}%) — Severe</code></td></tr>
+    <tr><td>Line color</td><td><code>#F87171</code> (đỏ) — dashed</td></tr>
+  </table>
+</div>
+
+<div class="warn-box">
+  <strong>⚠️ Lưu ý Reference Lines:</strong><br>
+  Looker Studio free tier chỉ hỗ trợ <strong>Constant value</strong> hoặc <strong>metric-based</strong> reference lines. Nếu muốn dùng metric-based:
+  <br>→ Chọn Type = <strong>Metric</strong> → chọn field <code>avg_drop_rate_pct</code> → Aggregation = <strong>MAX</strong>.
+  <br>Đối với 2× AVG, cần tạo thêm calculated field trong BigQuery view:
+  <pre><code>-- Thêm vào view
+ROUND(avg_drop_rate * 200, 2) AS severe_threshold_pct</code></pre>
+  Hoặc đơn giản nhất: nhập constant value trực tiếp.
+</div>
+
+<h3>Bước 4: Tab Style — Colors & Labels</h3>
+
+<div class="step-card purple">
+  <span class="step-num purple">4</span> <strong>Style settings</strong> (giống Page 1 nhưng Y-axis khác)
+  <table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td>Bar colors</td><td><span class="color-swatch" style="background:#f87171"></span> severe = <code>#F87171</code>, <span class="color-swatch" style="background:#fbbf24"></span> warning = <code>#FBBF24</code>, <span class="color-swatch" style="background:#60a5fa"></span> normal = <code>#60A5FA</code></td></tr>
+    <tr><td>Y-axis label</td><td>"Drop Rate (%)"</td></tr>
+    <tr><td>X-axis label</td><td>"Level Number"</td></tr>
+    <tr><td>Chart title</td><td>"Drop Rate Spikes by Level"</td></tr>
+  </table>
+</div>
+
+<h3>Bước 5: Thêm Legend</h3>
+
+<p>Tạo 3 text elements + colored circles phía trên chart:</p>
+<div style="display:flex; gap:1.5rem; margin:0.5rem 0;">
+  <span><span class="color-swatch" style="background:#f87171"></span> <span class="tag tag-severe">Severe drop (>2× AVG)</span></span>
+  <span><span class="color-swatch" style="background:#fbbf24"></span> <span class="tag tag-warning">Warning (>1.5× AVG)</span></span>
+  <span><span class="color-swatch" style="background:#60a5fa"></span> <span class="tag tag-normal">Normal attrition</span></span>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="page3">6. Page 3 — Overlay (Drop + Attempts)</h2>
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="card">
+  <h4>Mục tiêu</h4>
+  <p>Chart kết hợp <strong>bar (drop rate)</strong> và <strong>line (avg attempts)</strong> trên cùng 1 chart — dùng <strong>Combo Chart</strong> với <strong>dual Y-axis</strong>. Giúp check correlation: level có drop rate cao có phải vì quá nhiều attempts không?</p>
+</div>
+
+<h3>Bước 1: Add Combo Chart</h3>
+
+<div class="step-card">
+  <span class="step-num">1</span> <strong>Add a chart</strong> → chọn <strong>"Combo chart"</strong>
+  <p style="margin-top:0.5rem">(Đây là chart type cho phép mix bars + lines trên cùng 1 chart)</p>
+</div>
+
+<h3>Bước 2: Tab Setup — Field Mapping</h3>
+
+<div class="step-card green">
+  <span class="step-num green">2</span> <strong>Cấu hình fields</strong>
+  <table>
+    <tr><th>Slot</th><th>Field</th><th>Ghi chú</th></tr>
+    <tr>
+      <td><strong>Dimension</strong></td>
+      <td><span class="field-box">level_number</span></td>
+      <td>Trục X</td>
+    </tr>
+    <tr>
+      <td><strong>Breakdown Dimension</strong></td>
+      <td><span class="field-box">severity</span></td>
+      <td>Tô màu bars theo severity</td>
+    </tr>
+    <tr>
+      <td><strong>Metric (Bars)</strong></td>
+      <td><span class="field-box">drop_rate_pct_display</span></td>
+      <td>Aggregation = <strong>MAX</strong> → hiển thị dạng <strong>Bars</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Metric (Line)</strong></td>
+      <td><span class="field-box">avg_attempts</span></td>
+      <td>Aggregation = <strong>MAX</strong> → hiển thị dạng <strong>Line</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Sort</strong></td>
+      <td><span class="field-box">level_number</span> <strong>Ascending</strong></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><strong>Rows per page</strong></td>
+      <td><code>100</code></td>
+      <td></td>
+    </tr>
+  </table>
+</div>
+
+<div class="warn-box">
+  <strong>⚠️ Cách set metric làm Bar vs Line:</strong><br>
+  Trong Combo chart, Looker Studio chia metrics thành 2 nhóm:<br>
+  → <strong>"Metric"</strong> slot (phía trên) = hiển thị dạng <strong>Bars</strong><br>
+  → Kéo metric thứ 2 vào slot bên dưới hoặc trong tab <strong>Style</strong> → mục <strong>"Series"</strong> → click vào <code>avg_attempts</code> → chọn <strong>"Line"</strong> thay vì "Bar".<br><br>
+  Nếu không thấy option này: vào tab <strong>Style</strong> → <strong>Series #2</strong> → <strong>Type: Line</strong>
+</div>
+
+<h3>Bước 3: Tab Style — Dual Axis + Series Config</h3>
+
+<div class="step-card orange">
+  <span class="step-num orange">3</span> <strong>Cấu hình Style</strong>
+  <table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr>
+      <td><strong>Series: drop_rate_pct_display</strong></td>
+      <td>Type = <strong>Bar</strong><br>Axis = <strong>Left Y-axis</strong><br>Colors by severity (same as Page 2)</td>
+    </tr>
+    <tr>
+      <td><strong>Series: avg_attempts</strong></td>
+      <td>Type = <strong>Line</strong><br>Axis = <strong>Right Y-axis</strong> ✅<br>Color = <code>#FBBF24</code> (vàng/cam)<br>Line style = dashed<br>Show points = ON</td>
+    </tr>
+    <tr>
+      <td><strong>Left Y-axis label</strong></td>
+      <td><span style="color:var(--severe)">"Drop Rate (%)"</span></td>
+    </tr>
+    <tr>
+      <td><strong>Right Y-axis label</strong></td>
+      <td><span style="color:var(--warning)">"Avg Attempts"</span></td>
+    </tr>
+    <tr>
+      <td>X-axis label</td>
+      <td>"Level Number"</td>
+    </tr>
+    <tr>
+      <td>Chart title</td>
+      <td>"Overlay: Drop Rate (bar) + Avg Attempts (line) — Correlation check"</td>
+    </tr>
+  </table>
+</div>
+
+<div class="step-card purple">
+  <span class="step-num purple">4</span> <strong>Enable Right Y-axis</strong>
+  <p style="margin-top:0.5rem">Trong tab <strong>Style</strong> → scroll đến <strong>"Right Y-Axis"</strong> → toggle <strong>ON</strong> → set "Show axis title" → nhập "Avg Attempts".</p>
+  <p>Nếu không thấy option này → vào <strong>Series</strong> section → click vào series <code>avg_attempts</code> → chọn <strong>Axis: Right</strong>.</p>
+</div>
+
+<h3>Bước 4: Reference Line (AVG Drop Rate)</h3>
+
+<div class="step-card red">
+  <span class="step-num red">5</span> <strong>Thêm reference line</strong> (giống Page 2)
+  <table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td>Type</td><td>Constant</td></tr>
+    <tr><td>Value</td><td>AVG drop rate (ví dụ: <code>1.87</code>)</td></tr>
+    <tr><td>Label</td><td><code>Avg drop rate ({value}%)</code></td></tr>
+    <tr><td>Color</td><td><code>#818CF8</code> — dashed</td></tr>
+    <tr><td>Axis</td><td><strong>Left axis</strong> (apply cho drop rate, không phải attempts)</td></tr>
+  </table>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="style">7. Styling & Color Mapping</h2>
+<!-- ═══════════════════════════════════════════ -->
+
+<h3>7A. Severity Color Map (áp dụng tất cả pages)</h3>
+
+<p>Trong tab <strong>Style</strong> của mỗi chart → mục <strong>"Color by"</strong> hoặc click vào color palette → assign màu cho mỗi severity value:</p>
+
+<table>
+  <tr><th>Severity</th><th>Hex Color</th><th>Swatch</th><th>Dùng khi</th></tr>
+  <tr><td><code>severe</code></td><td><code>#F87171</code></td><td><span class="color-swatch" style="background:#f87171"></span> Đỏ</td><td>drop_vs_avg ≥ 2.0</td></tr>
+  <tr><td><code>warning</code></td><td><code>#FBBF24</code></td><td><span class="color-swatch" style="background:#fbbf24"></span> Vàng</td><td>drop_vs_avg ≥ 1.5</td></tr>
+  <tr><td><code>normal</code></td><td><code>#60A5FA</code></td><td><span class="color-swatch" style="background:#60a5fa"></span> Xanh</td><td>drop_vs_avg < 1.5</td></tr>
+</table>
+
+<div class="step-card">
+  <span class="step-num">!</span> <strong>Cách assign color cho severity</strong>
+  <p style="margin-top:0.5rem">Click chart → tab <strong>Style</strong> → mục <strong>"Color"</strong> → click vào ô color bên cạnh mỗi severity label → chọn custom hex color tương ứng.</p>
+  <p>Nếu thứ tự severity không đúng → trong tab <strong>Setup</strong> → <strong>Breakdown Dimension sort</strong> → chọn <code>severity_order</code> Ascending → đảm bảo severe luôn hiện trước.</p>
+</div>
+
+<h3>7B. Dark Theme (Optional)</h3>
+
+<p>Vào <strong>Theme and layout</strong> (menu <strong>File</strong> hoặc click vào background):</p>
+<table>
+  <tr><th>Element</th><th>Value</th></tr>
+  <tr><td>Report background</td><td><code>#0f1117</code></td></tr>
+  <tr><td>Canvas background</td><td><code>#1a1d27</code></td></tr>
+  <tr><td>Chart background</td><td><code>#1a1d27</code></td></tr>
+  <tr><td>Font color</td><td><code>#e2e8f0</code></td></tr>
+  <tr><td>Grid color</td><td><code>#2a2d3a</code></td></tr>
+  <tr><td>Border</td><td><code>#2a2d3a</code></td></tr>
+</table>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="extras">8. Bonus: Scorecards, Problem Levels Table & Legend</h2>
+<!-- ═══════════════════════════════════════════ -->
+
+<h3>8A. Scorecards (top of each page)</h3>
+
+<p>Thêm 4 scorecards dạng KPI cards phía trên chart:</p>
+
+<table>
+  <tr><th>Scorecard</th><th>Field</th><th>Agg</th><th>Format</th></tr>
+  <tr><td>🎯 Total Levels</td><td><code>level_number</code></td><td>COUNT DISTINCT</td><td>Number</td></tr>
+  <tr><td>👥 Total Players</td><td><code>total_users</code></td><td>MAX</td><td>Number</td></tr>
+  <tr><td>📉 Avg Drop Rate</td><td><code>avg_drop_rate_pct</code></td><td>MAX</td><td>Number + suffix "%"</td></tr>
+  <tr><td>🚨 Severe Levels</td><td><code>level_number</code> + filter severity=severe</td><td>COUNT DISTINCT</td><td>Number</td></tr>
+</table>
+
+<h3>8B. Problem Levels Table (đặt bên cạnh hoặc dưới chart)</h3>
+
+<p>Thêm <strong>Table chart</strong> chỉ hiện severe + warning levels:</p>
+
+<div class="step-card green">
+  <span class="step-num green">T</span> <strong>Table Setup</strong>
+  <table>
+    <tr><th>Slot</th><th>Value</th></tr>
+    <tr><td>Dimension</td><td><code>level_number</code>, <code>severity</code></td></tr>
+    <tr><td>Metrics</td><td><code>drop_rate_pct_display</code>, <code>players_lost</code>, <code>avg_attempts</code>, <code>difficulty_index</code></td></tr>
+    <tr><td>Sort</td><td><code>drop_rate_pct_display</code> <strong>Descending</strong></td></tr>
+    <tr><td>Filter</td><td>Include | severity | IN | severe, warning</td></tr>
+    <tr><td>Rows per page</td><td>10</td></tr>
+  </table>
+  <p style="margin-top:0.5rem">Table này chỉ hiện các level có vấn đề, sort theo drop rate cao nhất → giúp PO nhanh chóng identify action items.</p>
+</div>
+
+<h3>8C. Custom Legend (thay thế default legend)</h3>
+
+<p>Tắt default legend của chart (Style → Legend position → None), sau đó tự tạo legend bằng Text + Shape elements:</p>
+
+<div style="background:#252836; padding:1rem; border-radius:8px; display:flex; gap:2rem; flex-wrap:wrap; margin:0.5rem 0;">
+  <span><span class="color-swatch" style="background:#f87171"></span> Severe drop (>2× AVG)</span>
+  <span><span class="color-swatch" style="background:#fbbf24"></span> Warning (>1.5× AVG)</span>
+  <span><span class="color-swatch" style="background:#60a5fa"></span> Normal attrition</span>
+  <span style="border-top: 2px dashed #818cf8; width:30px; display:inline-block; vertical-align:middle; margin-right:4px;"></span> Avg drop rate
+</div>
+
+<p>Dùng <strong>Insert → Shape</strong> (small circle/square) với fill color tương ứng + <strong>Insert → Text</strong> cho label.</p>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>📋 Quick Checklist</h2>
+<!-- ═══════════════════════════════════════════ -->
+
+<div class="card">
+  <table>
+    <tr><th>✅</th><th>Task</th><th>Page</th></tr>
+    <tr><td>☐</td><td>BigQuery view <code>mart_level_funnel_enriched</code> đã chạy</td><td>—</td></tr>
+    <tr><td>☐</td><td>Data source connected trong Looker Studio</td><td>—</td></tr>
+    <tr><td>☐</td><td>2 Parameters (<code>level_from</code>, <code>level_to</code>) đã tạo</td><td>Global</td></tr>
+    <tr><td>☐</td><td>Calculated field <code>level_in_range</code> đã tạo</td><td>Global</td></tr>
+    <tr><td>☐</td><td>2 Drop-down controls cho range filter</td><td>All pages</td></tr>
+    <tr><td>☐</td><td>3 Navigation tab shapes với page links</td><td>All pages</td></tr>
+    <tr><td>☐</td><td>Bar chart — Completion Funnel</td><td>Page 1</td></tr>
+    <tr><td>☐</td><td>Bar chart — Drop Rate Spikes + Reference Lines</td><td>Page 2</td></tr>
+    <tr><td>☐</td><td>Combo chart — Overlay (bars + line, dual axis)</td><td>Page 3</td></tr>
+    <tr><td>☐</td><td>Level Range Filter applied cho mỗi chart</td><td>All pages</td></tr>
+    <tr><td>☐</td><td>Severity color mapping: red/yellow/blue</td><td>All pages</td></tr>
+    <tr><td>☐</td><td>Rows per page = 100 cho mỗi chart</td><td>All pages</td></tr>
+    <tr><td>☐</td><td>Sort = level_number ASC cho mỗi chart</td><td>All pages</td></tr>
+    <tr><td>☐</td><td>Scorecards + Problem Levels Table</td><td>Optional</td></tr>
+    <tr><td>☐</td><td>Dark theme applied</td><td>Optional</td></tr>
+  </table>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood-It — Looker Studio Chart Setup Guide</title>
+    <style>
+        :root {
+            --bg: #0b0d13;
+            --surface: #12151e;
+            --card: #181c28;
+            --inner: #1e2233;
+            --border: #272d40;
+            --border-hi: #3a4260;
+            --text: #e4e7f0;
+            --text-m: #8b92a8;
+            --text-d: #555c72;
+            --accent: #7c6cf0;
+            --accent-s: rgba(124,108,240,0.10);
+            --red: #f87171;
+            --orange: #fbbf24;
+            --green: #34d399;
+            --blue: #60a5fa;
+            --pink: #f472b6;
+            --purple: #a78bfa;
+            --cyan: #67e8f9;
+            --dim-bg: #4285f4;
+            --met-bg: #34a853;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;padding:32px 40px;max-width:1400px;margin:0 auto}
+
+        .header{margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+        .header h1{font-size:24px;font-weight:700}
+        .header h1 span{color:var(--blue)}
+        .header .sub{color:var(--text-m);font-size:13px;margin-top:4px}
+
+        .divider{height:1px;background:var(--border);margin:40px 0}
+
+        /* Legend tags */
+        .tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px;vertical-align:middle}
+        .tag-dim{background:rgba(66,133,244,0.15);color:#8ab4f8;border:1px solid rgba(66,133,244,0.3)}
+        .tag-met{background:rgba(52,168,83,0.15);color:#81c995;border:1px solid rgba(52,168,83,0.3)}
+        .tag-calc{background:rgba(251,191,36,0.12);color:var(--orange);border:1px solid rgba(251,191,36,0.25)}
+        .tag-sort{background:rgba(167,139,250,0.12);color:var(--purple);border:1px solid rgba(167,139,250,0.25)}
+        .tag-style{background:rgba(244,114,182,0.12);color:var(--pink);border:1px solid rgba(244,114,182,0.25)}
+
+        .tag-dot{width:8px;height:8px;border-radius:50%}
+        .dot-dim{background:#4285f4}
+        .dot-met{background:#34a853}
+        .dot-calc{background:var(--orange)}
+
+        /* Chart setup card */
+        .chart-setup{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:32px}
+        .cs-header{padding:20px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)}
+        .cs-num{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0}
+        .cs-title{font-size:17px;font-weight:700}
+        .cs-type{font-size:12px;color:var(--text-d);margin-top:2px}
+
+        .cs-body{padding:24px}
+
+        /* Looker panel mockup */
+        .looker-panel{display:grid;grid-template-columns:320px 1fr;gap:20px;margin-bottom:20px}
+
+        .lk-sidebar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0;overflow:hidden}
+        .lk-sidebar-head{background:#1a1d27;padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+        .lk-sidebar-head-icon{font-size:14px}
+        .lk-sidebar-head-text{font-size:12px;font-weight:600;color:var(--text-m)}
+
+        .lk-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+        .lk-section:last-child{border-bottom:none}
+        .lk-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-d);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+
+        .lk-field{background:var(--inner);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;transition:all .15s}
+        .lk-field:last-child{margin-bottom:0}
+        .lk-field:hover{border-color:var(--border-hi)}
+        .lk-field-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;color:#fff}
+        .lk-field-icon.dim{background:#4285f4}
+        .lk-field-icon.met{background:#34a853}
+        .lk-field-icon.calc{background:var(--orange);color:#1a1e2a}
+        .lk-field-name{font-size:13px;font-weight:500;flex:1}
+        .lk-field-role{font-size:10px;color:var(--text-d);padding:2px 6px;background:rgba(255,255,255,.04);border-radius:3px}
+        .lk-field-note{font-size:11px;color:var(--text-d);margin-top:3px;line-height:1.4}
+
+        .lk-field-group{margin-bottom:12px}
+        .lk-field-group-label{font-size:11px;font-weight:600;color:var(--text-m);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+
+        /* Chart preview area */
+        .lk-preview{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column}
+        .lk-preview-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-d);margin-bottom:12px}
+
+        /* Mock bar chart */
+        .mock-chart{flex:1;display:flex;flex-direction:column;justify-content:flex-end}
+        .mock-bars-row{display:flex;align-items:flex-end;gap:4px;flex:1;padding:8px 0}
+        .mock-bar{flex:1;border-radius:3px 3px 0 0;min-width:6px;position:relative}
+        .mock-bar .bar-label{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--text-d);white-space:nowrap}
+        .mock-x-axis{display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--border)}
+        .mock-x-axis span{font-size:9px;color:var(--text-d)}
+        .mock-y-axis{position:absolute;left:-30px;top:50%;transform:rotate(-90deg);font-size:9px;color:var(--text-d);white-space:nowrap}
+
+        /* Reference line */
+        .mock-ref-line{position:absolute;left:0;right:0;border-top:2px dashed;display:flex;align-items:center;justify-content:flex-end}
+        .mock-ref-label{font-size:8px;font-weight:600;padding:1px 4px;border-radius:2px;white-space:nowrap;margin-right:-4px}
+
+        /* Annotation boxes */
+        .anno-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+        .anno-box{background:var(--inner);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+        .anno-box h4{font-size:12px;font-weight:600;margin-bottom:6px}
+        .anno-box p{font-size:11px;color:var(--text-m);line-height:1.5}
+        .anno-box code{background:var(--accent-s);color:var(--accent);padding:1px 5px;border-radius:3px;font-size:10px;font-family:monospace}
+
+        /* Step indicators */
+        .step-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 16px;background:var(--inner);border-radius:10px;border:1px solid var(--border)}
+        .step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;color:#fff}
+        .step-text{font-size:13px;color:var(--text-m);flex:1}
+        .step-text strong{color:var(--text);font-weight:600}
+
+        .footer{text-align:center;color:var(--text-d);font-size:11px;margin-top:40px;padding-top:20px;border-top:1px solid var(--border)}
+
+        /* Conditional format preview */
+        .cf-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+        .cf-item{border-radius:8px;padding:10px 14px;text-align:center}
+        .cf-item .cf-val{font-size:16px;font-weight:700}
+        .cf-item .cf-label{font-size:10px;margin-top:2px}
+
+        @media(max-width:900px){.looker-panel{grid-template-columns:1fr}.anno-grid{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<div class="header">
+    <h1><span>Looker Studio</span> — Chart Setup Guide</h1>
+    <div class="sub">
+        Data source: <code style="background:var(--accent-s);color:var(--accent);padding:1px 6px;border-radius:3px;font-size:11px">mart_level_funnel_enriched</code>
+        &bull; Hướng dẫn kéo-thả từng field vào đúng vị trí &bull; Dimension vs Metric highlight
+    </div>
+</div>
+
+<!-- Legend -->
+<div style="display:flex;gap:16px;margin-bottom:28px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;flex-wrap:wrap">
+    <div style="font-size:12px;font-weight:600;color:var(--text-m);margin-right:8px">Field Types:</div>
+    <span class="tag tag-dim"><span class="tag-dot dot-dim"></span> DIMENSION — Trục phân loại (X-axis, breakdown)</span>
+    <span class="tag tag-met"><span class="tag-dot dot-met"></span> METRIC — Giá trị đo lường (Y-axis, bar height)</span>
+    <span class="tag tag-calc">CALCULATED — Đã tính sẵn trong view</span>
+    <span class="tag tag-sort">SORT / FILTER</span>
+    <span class="tag tag-style">STYLE / FORMAT</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- CHART C1: COMPLETION FUNNEL -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="chart-setup">
+    <div class="cs-header">
+        <div class="cs-num" style="background:var(--red)">C1</div>
+        <div>
+            <div class="cs-title">Level Completion Funnel</div>
+            <div class="cs-type">Looker Studio → Add Chart → <strong>Bar Chart</strong> (không phải Stacked)</div>
+        </div>
+    </div>
+    <div class="cs-body">
+
+        <!-- Steps -->
+        <div class="step-row">
+            <div class="step-num" style="background:#4285f4">1</div>
+            <div class="step-text">Trong Looker Studio Editor → <strong>Add a chart</strong> → chọn <strong>Bar chart</strong> (vertical) → vẽ lên canvas</div>
+        </div>
+        <div class="step-row">
+            <div class="step-num" style="background:#34a853">2</div>
+            <div class="step-text">Panel bên phải hiện ra <strong>Chart Setup</strong> → kéo các fields từ <strong>Available Fields</strong> vào đúng slot như bên dưới</div>
+        </div>
+
+        <!-- Main layout: Sidebar (config) + Preview -->
+        <div class="looker-panel">
+
+            <!-- ── SIDEBAR: Field config ── -->
+            <div class="lk-sidebar">
+                <div class="lk-sidebar-head">
+                    <span class="lk-sidebar-head-icon">⚙️</span>
+                    <span class="lk-sidebar-head-text">SETUP — Chart Configuration</span>
+                </div>
+
+                <!-- DATA SOURCE -->
+                <div class="lk-section">
+                    <div class="lk-section-label">
+                        Data Source
+                    </div>
+                    <div class="lk-field" style="border-color:#4285f4;background:rgba(66,133,244,0.06)">
+                        <div class="lk-field-icon" style="background:#4285f4;font-size:10px">BQ</div>
+                        <div>
+                            <div class="lk-field-name" style="color:#8ab4f8">mart_level_funnel_enriched</div>
+                            <div class="lk-field-note">BigQuery View đã tạo</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DIMENSION -->
+                <div class="lk-section">
+                    <div class="lk-section-label">
+                        <span>Dimension</span>
+                        <span class="tag tag-dim" style="font-size:9px;padding:1px 6px">X-AXIS</span>
+                    </div>
+                    <div class="lk-field">
+                        <div class="lk-field-icon dim">D</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name">level_number</div>
+                            <div class="lk-field-note">Trục ngang — mỗi bar = 1 level</div>
+                        </div>
+                        <span class="lk-field-role">NUMBER</span>
+                    </div>
+                </div>
+
+                <!-- BREAKDOWN DIMENSION -->
+                <div class="lk-section">
+                    <div class="lk-section-label">
+                        <span>Breakdown Dimension</span>
+                        <span class="tag tag-dim" style="font-size:9px;padding:1px 6px">COLOR</span>
+                    </div>
+                    <div class="lk-field" style="border-color:var(--pink);background:rgba(244,114,182,0.04)">
+                        <div class="lk-field-icon dim">D</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name">severity</div>
+                            <div class="lk-field-note">
+                                Tô màu bar theo mức độ drop:<br>
+                                <span style="color:var(--red)">■</span> severe &nbsp;
+                                <span style="color:var(--orange)">■</span> warning &nbsp;
+                                <span style="color:var(--blue)">■</span> normal
+                            </div>
+                        </div>
+                        <span class="lk-field-role">STRING</span>
+                    </div>
+                    <div style="font-size:10px;color:var(--pink);margin-top:6px;padding:0 4px">
+                        ⚡ Field này quyết định MÀU của từng bar. Kéo vào slot "Breakdown Dimension" (không phải Dimension chính).
+                    </div>
+                </div>
+
+                <!-- METRIC -->
+                <div class="lk-section">
+                    <div class="lk-section-label">
+                        <span>Metric</span>
+                        <span class="tag tag-met" style="font-size:9px;padding:1px 6px">Y-AXIS</span>
+                    </div>
+                    <div class="lk-field">
+                        <div class="lk-field-icon met">M</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name">completion_rate_pct</div>
+                            <div class="lk-field-note">
+                                Chiều cao bar = % user base qua level<br>
+                                Aggregation: <strong>AVG</strong> (hoặc MAX, vì 1 row/level)
+                            </div>
+                        </div>
+                        <span class="lk-field-role">NUMBER %</span>
+                    </div>
+                </div>
+
+                <!-- SORT -->
+                <div class="lk-section">
+                    <div class="lk-section-label">
+                        <span>Sort</span>
+                        <span class="tag tag-sort" style="font-size:9px;padding:1px 6px">ORDER</span>
+                    </div>
+                    <div class="lk-field">
+                        <div class="lk-field-icon" style="background:var(--purple);color:#1a1e2a">S</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name">level_number</div>
+                            <div class="lk-field-note">Sort: <strong>Ascending</strong> (1 → N)</div>
+                        </div>
+                        <span class="lk-field-role">ASC ↑</span>
+                    </div>
+                </div>
+
+                <!-- TOOLTIP -->
+                <div class="lk-section">
+                    <div class="lk-section-label">
+                        <span>Optional Metrics (hiện trong Tooltip)</span>
+                    </div>
+                    <div class="lk-field" style="opacity:.75">
+                        <div class="lk-field-icon met">M</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name">users_completed</div>
+                            <div class="lk-field-note">Số user tuyệt đối</div>
+                        </div>
+                    </div>
+                    <div class="lk-field" style="opacity:.75">
+                        <div class="lk-field-icon calc">C</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name">drop_rate_pct_display</div>
+                            <div class="lk-field-note">Drop rate % khi hover</div>
+                        </div>
+                    </div>
+                    <div class="lk-field" style="opacity:.75">
+                        <div class="lk-field-icon met">M</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name">avg_attempts</div>
+                            <div class="lk-field-note">Số lần thử TB</div>
+                        </div>
+                    </div>
+                    <div class="lk-field" style="opacity:.75">
+                        <div class="lk-field-icon calc">C</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name">players_lost</div>
+                            <div class="lk-field-note">Số user bị mất</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── PREVIEW: Chart mockup ── -->
+            <div class="lk-preview">
+                <div class="lk-preview-label">Chart Preview — Kết quả mong đợi</div>
+                <div style="flex:1;position:relative;padding-left:36px;padding-bottom:24px">
+                    <!-- Y-axis label -->
+                    <div style="position:absolute;left:0;top:45%;transform:rotate(-90deg);font-size:10px;color:var(--text-d);white-space:nowrap;font-weight:500">completion_rate_pct (%)</div>
+
+                    <!-- Chart bars -->
+                    <div style="display:flex;align-items:flex-end;gap:3px;height:240px;padding:8px 0;position:relative">
+                        <!-- Simulated bars with colors -->
+                        <div class="mock-bar" style="height:98%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:95%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:92%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:90%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:88%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:85%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:82%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:79%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:76%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:74%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:71%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:68%;background:var(--orange);opacity:.85"></div>
+                        <div class="mock-bar" style="height:58%;background:var(--red);opacity:.95"><div class="bar-label" style="color:var(--red)">▼ Cliff #1</div></div>
+                        <div class="mock-bar" style="height:55%;background:var(--orange);opacity:.85"></div>
+                        <div class="mock-bar" style="height:54%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:52%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:50%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:48%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:46%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:44%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:42%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:40%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:38%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:36%;background:var(--orange);opacity:.85"></div>
+                        <div class="mock-bar" style="height:26%;background:var(--red);opacity:.95"><div class="bar-label" style="color:var(--red)">▼ Cliff #2</div></div>
+                        <div class="mock-bar" style="height:24%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:22%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:20%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:18%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:16%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:14%;background:var(--orange);opacity:.85"></div>
+                        <div class="mock-bar" style="height:10%;background:var(--red);opacity:.95"><div class="bar-label" style="color:var(--red)">▼ Cliff #3</div></div>
+                        <div class="mock-bar" style="height:9%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:8%;background:var(--blue);opacity:.55"></div>
+                        <div class="mock-bar" style="height:7%;background:var(--blue);opacity:.55"></div>
+                    </div>
+
+                    <!-- X-axis -->
+                    <div style="display:flex;justify-content:space-between;padding-top:4px;border-top:1px solid var(--border)">
+                        <span style="font-size:9px;color:var(--text-d)">Level 1</span>
+                        <span style="font-size:10px;color:var(--text-d);font-weight:500">level_number →</span>
+                        <span style="font-size:9px;color:var(--text-d)">Level N</span>
+                    </div>
+                </div>
+
+                <!-- Color legend in preview -->
+                <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+                    <span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--red)"></span><span style="color:var(--red)">severe</span> (drop ≥ 2× AVG)</span>
+                    <span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--orange)"></span><span style="color:var(--orange)">warning</span> (drop ≥ 1.5× AVG)</span>
+                    <span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--blue);opacity:.55"></span><span style="color:var(--blue)">normal</span> (attrition bình thường)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── STYLE SETTINGS ── -->
+        <div style="margin-top:8px">
+            <h3 style="font-size:14px;font-weight:600;color:var(--pink);margin-bottom:12px">🎨 Style Settings (tab STYLE trong Looker Studio)</h3>
+            <div class="anno-grid">
+                <div class="anno-box">
+                    <h4 style="color:var(--pink)">Bar Colors (Series Colors)</h4>
+                    <p>
+                        Vì dùng <code>severity</code> làm Breakdown Dimension, Looker sẽ tạo 3 series tự động.<br><br>
+                        Click vào mỗi series → đổi màu:<br>
+                        &bull; <strong style="color:var(--red)">severe</strong> → <code>#f87171</code> (đỏ)<br>
+                        &bull; <strong style="color:var(--orange)">warning</strong> → <code>#fbbf24</code> (cam)<br>
+                        &bull; <strong style="color:var(--blue)">normal</strong> → <code>#60a5fa</code> (xanh, opacity 60%)
+                    </p>
+                </div>
+                <div class="anno-box">
+                    <h4 style="color:var(--pink)">Reference Line</h4>
+                    <p>
+                        Tab Style → <strong>Reference Lines</strong> → Add:<br><br>
+                        &bull; Type: <strong>Constant Line</strong><br>
+                        &bull; Value: nhập giá trị <code>avg_drop_rate_pct</code> (check trong data)<br>
+                        &bull; Label: "Avg Completion Rate"<br>
+                        &bull; Style: dashed, color <code>#fbbf24</code><br><br>
+                        <em>Hoặc nếu muốn dynamic: dùng metric reference line = AVG(completion_rate_pct)</em>
+                    </p>
+                </div>
+                <div class="anno-box">
+                    <h4 style="color:var(--pink)">Axes</h4>
+                    <p>
+                        Y-Axis:<br>
+                        &bull; Label: "Completion Rate (%)"<br>
+                        &bull; Range: 0 → 100<br>
+                        &bull; Grid lines: ON, nhẹ<br><br>
+                        X-Axis:<br>
+                        &bull; Label: "Level Number"<br>
+                        &bull; Show all labels (hoặc interval=5 nếu nhiều levels)
+                    </p>
+                </div>
+                <div class="anno-box">
+                    <h4 style="color:var(--pink)">Bar Spacing & Size</h4>
+                    <p>
+                        &bull; Bar gap: nhỏ (để bars sát nhau → thấy rõ funnel shape)<br>
+                        &bull; Border radius: nhẹ (rounded top)<br>
+                        &bull; Data labels: OFF (chart sẽ quá rối nếu bật)<br>
+                        &bull; Legend: hiển thị ở bottom hoặc top-right<br>
+                        &bull; Background: trắng hoặc dark tùy theme
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- CHART C2: DROP RATE SPIKES -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="chart-setup">
+    <div class="cs-header">
+        <div class="cs-num" style="background:var(--orange);color:#1a1e2a">C2</div>
+        <div>
+            <div class="cs-title">Drop Rate Spike Detector</div>
+            <div class="cs-type">Looker Studio → Add Chart → <strong>Bar Chart</strong> (vertical)</div>
+        </div>
+    </div>
+    <div class="cs-body">
+
+        <div class="looker-panel">
+            <div class="lk-sidebar">
+                <div class="lk-sidebar-head">
+                    <span class="lk-sidebar-head-icon">⚙️</span>
+                    <span class="lk-sidebar-head-text">SETUP — Drop Rate Chart</span>
+                </div>
+
+                <div class="lk-section">
+                    <div class="lk-section-label"><span>Dimension</span><span class="tag tag-dim" style="font-size:9px;padding:1px 6px">X-AXIS</span></div>
+                    <div class="lk-field">
+                        <div class="lk-field-icon dim">D</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name">level_number</div>
+                        </div>
+                        <span class="lk-field-role">NUMBER</span>
+                    </div>
+                </div>
+
+                <div class="lk-section">
+                    <div class="lk-section-label"><span>Breakdown Dimension</span><span class="tag tag-dim" style="font-size:9px;padding:1px 6px">COLOR</span></div>
+                    <div class="lk-field" style="border-color:var(--pink);background:rgba(244,114,182,0.04)">
+                        <div class="lk-field-icon dim">D</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name">severity</div>
+                            <div class="lk-field-note">Tô màu bar theo severity</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lk-section">
+                    <div class="lk-section-label"><span>Metric</span><span class="tag tag-met" style="font-size:9px;padding:1px 6px">Y-AXIS</span></div>
+                    <div class="lk-field" style="border-color:var(--orange);background:rgba(251,191,36,0.04)">
+                        <div class="lk-field-icon calc">C</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name">drop_rate_pct_display</div>
+                            <div class="lk-field-note">
+                                Drop % giữa level N-1 → N<br>
+                                Aggregation: <strong>AVG</strong> (hoặc MAX)
+                            </div>
+                        </div>
+                        <span class="lk-field-role">NUMBER %</span>
+                    </div>
+                </div>
+
+                <div class="lk-section">
+                    <div class="lk-section-label"><span>Sort</span></div>
+                    <div class="lk-field">
+                        <div class="lk-field-icon" style="background:var(--purple);color:#1a1e2a">S</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name">level_number — ASC ↑</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lk-section">
+                    <div class="lk-section-label"><span>Reference Lines (2 lines)</span></div>
+                    <div class="lk-field" style="border-color:var(--orange)">
+                        <div class="lk-field-icon calc">1</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name" style="color:var(--orange)">AVG Drop Rate</div>
+                            <div class="lk-field-note">Metric: AVG(drop_rate_pct_display)<br>Style: dashed, <code>#fbbf24</code></div>
+                        </div>
+                    </div>
+                    <div class="lk-field" style="border-color:var(--red)">
+                        <div class="lk-field-icon calc">2</div>
+                        <div style="flex:1">
+                            <div class="lk-field-name" style="color:var(--red)">2× AVG (Severe threshold)</div>
+                            <div class="lk-field-note">Constant: avg × 2<br>Style: dashed, <code>#f87171</code></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lk-section">
+                    <div class="lk-section-label"><span>Optional Metrics (Tooltip)</span></div>
+                    <div class="lk-field" style="opacity:.75">
+                        <div class="lk-field-icon calc">C</div>
+                        <div class="lk-field-name">players_lost</div>
+                    </div>
+                    <div class="lk-field" style="opacity:.75">
+                        <div class="lk-field-icon calc">C</div>
+                        <div class="lk-field-name">drop_vs_avg</div>
+                    </div>
+                    <div class="lk-field" style="opacity:.75">
+                        <div class="lk-field-icon met">M</div>
+                        <div class="lk-field-name">avg_attempts</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="lk-preview">
+                <div class="lk-preview-label">Chart Preview — Drop Rate Spikes</div>
+                <div style="flex:1;position:relative;padding-left:36px;padding-bottom:24px">
+                    <div style="position:absolute;left:0;top:45%;transform:rotate(-90deg);font-size:10px;color:var(--text-d);white-space:nowrap;font-weight:500">drop_rate_pct_display (%)</div>
+                    <div style="display:flex;align-items:flex-end;gap:3px;height:200px;padding:8px 0;position:relative">
+                        <!-- Ref lines -->
+                        <div style="position:absolute;left:0;right:0;bottom:30%;border-top:2px dashed var(--orange);z-index:1">
+                            <span style="position:absolute;right:0;top:-14px;font-size:8px;color:var(--orange);font-weight:600;background:var(--surface);padding:0 4px">AVG</span>
+                        </div>
+                        <div style="position:absolute;left:0;right:0;bottom:60%;border-top:2px dashed var(--red);opacity:.5;z-index:1">
+                            <span style="position:absolute;right:0;top:-14px;font-size:8px;color:var(--red);font-weight:600;background:var(--surface);padding:0 4px">2×AVG</span>
+                        </div>
+                        <!-- Bars -->
+                        <div class="mock-bar" style="height:15%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:20%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:18%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:22%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:15%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:25%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:20%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:18%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:30%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:35%;background:var(--orange);opacity:.85"></div>
+                        <div class="mock-bar" style="height:90%;background:var(--red)"><div class="bar-label" style="color:var(--red);font-weight:700">🔺 Spike!</div></div>
+                        <div class="mock-bar" style="height:20%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:15%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:18%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:22%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:15%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:20%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:35%;background:var(--orange);opacity:.85"></div>
+                        <div class="mock-bar" style="height:82%;background:var(--red)"><div class="bar-label" style="color:var(--red);font-weight:700">🔺 Spike!</div></div>
+                        <div class="mock-bar" style="height:18%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:15%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:12%;background:var(--blue);opacity:.5"></div>
+                        <div class="mock-bar" style="height:40%;background:var(--orange);opacity:.85"></div>
+                        <div class="mock-bar" style="height:72%;background:var(--red)"><div class="bar-label" style="color:var(--red);font-weight:700">🔺</div></div>
+                        <div class="mock-bar" style="height:15%;background:var(--blue);opacity:.5"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding-top:4px;border-top:1px solid var(--border)">
+                        <span style="font-size:9px;color:var(--text-d)">Level 1</span>
+                        <span style="font-size:10px;color:var(--text-d)">level_number →</span>
+                        <span style="font-size:9px;color:var(--text-d)">Level N</span>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+                    <span style="font-size:10px;color:var(--text-m)">Bars vượt qua đường <span style="color:var(--orange)">AVG</span> = cần chú ý &bull; Vượt <span style="color:var(--red)">2×AVG</span> = cần action ngay</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- COMPLETE FIELD REFERENCE TABLE -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div style="margin-bottom:32px">
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:16px">📋 Full Field Reference — mart_level_funnel_enriched</h3>
+    <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead>
+                <tr style="border-bottom:2px solid var(--border)">
+                    <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Field Name</th>
+                    <th style="padding:8px 12px;text-align:center;color:var(--text-d);font-size:10px;text-transform:uppercase">Type</th>
+                    <th style="padding:8px 12px;text-align:center;color:var(--text-d);font-size:10px;text-transform:uppercase">Nguồn</th>
+                    <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;text-transform:uppercase">Dùng trong Chart</th>
+                    <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;text-transform:uppercase">Kéo vào slot nào</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom:1px solid #1e2233">
+                    <td style="padding:8px 12px;font-family:monospace;color:#8ab4f8;font-weight:500">level_number</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-dim" style="font-size:9px">DIM</span></td>
+                    <td style="padding:8px 12px;text-align:center;color:var(--text-d)">Gốc</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C1, C2, C4, C5, C6</td>
+                    <td style="padding:8px 12px;color:var(--text-m)"><strong>Dimension</strong> (X-axis)</td>
+                </tr>
+                <tr style="border-bottom:1px solid #1e2233">
+                    <td style="padding:8px 12px;font-family:monospace;color:#81c995;font-weight:500">completion_rate_pct</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-met" style="font-size:9px">MET</span></td>
+                    <td style="padding:8px 12px;text-align:center;color:var(--text-d)">View</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C1 (primary), C3 (X), C4 (ref)</td>
+                    <td style="padding:8px 12px;color:var(--text-m)"><strong>Metric</strong> (Y-axis) cho C1</td>
+                </tr>
+                <tr style="border-bottom:1px solid #1e2233;background:rgba(244,114,182,0.03)">
+                    <td style="padding:8px 12px;font-family:monospace;color:var(--pink);font-weight:500">severity</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-dim" style="font-size:9px">DIM</span></td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-calc" style="font-size:9px">CALC</span></td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C1, C2 (bar color)</td>
+                    <td style="padding:8px 12px;color:var(--text-m)"><strong>Breakdown Dimension</strong> (tô màu bars)</td>
+                </tr>
+                <tr style="border-bottom:1px solid #1e2233">
+                    <td style="padding:8px 12px;font-family:monospace;color:var(--orange);font-weight:500">drop_rate_pct_display</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-met" style="font-size:9px">MET</span></td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-calc" style="font-size:9px">CALC</span></td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C2 (primary), C4 (bar)</td>
+                    <td style="padding:8px 12px;color:var(--text-m)"><strong>Metric</strong> (Y-axis) cho C2</td>
+                </tr>
+                <tr style="border-bottom:1px solid #1e2233">
+                    <td style="padding:8px 12px;font-family:monospace;color:#81c995">users_completed</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-met" style="font-size:9px">MET</span></td>
+                    <td style="padding:8px 12px;text-align:center;color:var(--text-d)">Gốc</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C1, C3 (bubble), C6</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">Optional Metric (tooltip)</td>
+                </tr>
+                <tr style="border-bottom:1px solid #1e2233">
+                    <td style="padding:8px 12px;font-family:monospace;color:#81c995">avg_attempts</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-met" style="font-size:9px">MET</span></td>
+                    <td style="padding:8px 12px;text-align:center;color:var(--text-d)">Gốc</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C3 (Y), C4 (line)</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">Metric — Y-axis cho C3, line cho C4</td>
+                </tr>
+                <tr style="border-bottom:1px solid #1e2233">
+                    <td style="padding:8px 12px;font-family:monospace;color:#81c995">avg_best_score</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-met" style="font-size:9px">MET</span></td>
+                    <td style="padding:8px 12px;text-align:center;color:var(--text-d)">Gốc</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C4 (line), C6 (col)</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">Optional Metric</td>
+                </tr>
+                <tr style="border-bottom:1px solid #1e2233">
+                    <td style="padding:8px 12px;font-family:monospace;color:#81c995">avg_days_to_complete</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-met" style="font-size:9px">MET</span></td>
+                    <td style="padding:8px 12px;text-align:center;color:var(--text-d)">Gốc</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C5 (primary)</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">Metric — Y-axis cho C5</td>
+                </tr>
+                <tr style="border-bottom:1px solid #1e2233">
+                    <td style="padding:8px 12px;font-family:monospace;color:var(--orange)">difficulty_index</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-met" style="font-size:9px">MET</span></td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-calc" style="font-size:9px">CALC</span></td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C6 (sort column)</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">Sort metric cho table</td>
+                </tr>
+                <tr style="border-bottom:1px solid #1e2233">
+                    <td style="padding:8px 12px;font-family:monospace;color:var(--orange)">players_lost</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-met" style="font-size:9px">MET</span></td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-calc" style="font-size:9px">CALC</span></td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C2, C6 (tooltip/col)</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">Optional Metric (tooltip)</td>
+                </tr>
+                <tr style="border-bottom:1px solid #1e2233">
+                    <td style="padding:8px 12px;font-family:monospace;color:var(--orange)">drop_vs_avg</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-met" style="font-size:9px">MET</span></td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-calc" style="font-size:9px">CALC</span></td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C2 (tooltip)</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">Optional Metric — "bội số so với AVG"</td>
+                </tr>
+                <tr style="border-bottom:1px solid #1e2233">
+                    <td style="padding:8px 12px;font-family:monospace;color:var(--orange)">pacing_gap</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-met" style="font-size:9px">MET</span></td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-calc" style="font-size:9px">CALC</span></td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C5 (secondary line)</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">Optional Metric</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 12px;font-family:monospace;color:var(--orange)">avg_drop_rate_pct</td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-met" style="font-size:9px">MET</span></td>
+                    <td style="padding:8px 12px;text-align:center"><span class="tag tag-calc" style="font-size:9px">CALC</span></td>
+                    <td style="padding:8px 12px;color:var(--text-m)">C2 (reference line value)</td>
+                    <td style="padding:8px 12px;color:var(--text-m)">Dùng để đặt reference line</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="footer">
+    Flood-It — Looker Studio Chart Setup Guide &bull; Data source: mart_level_funnel_enriched &bull; Dimension vs Metric mapping
+</div>
+
+</body>
+</html>

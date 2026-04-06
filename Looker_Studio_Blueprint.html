@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood-It — Looker Studio Dashboard Blueprint</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --card-alt: #1e2233;
+            --border: #2a2e3d;
+            --border-light: #353a4f;
+            --text: #e4e6ed;
+            --text-muted: #8b8fa3;
+            --text-dim: #5a5e72;
+            --accent: #6c5ce7;
+            --accent-light: #a29bfe;
+            --green: #00cec9;
+            --green-dim: #00b894;
+            --orange: #fdcb6e;
+            --red: #ff7675;
+            --blue: #74b9ff;
+            --pink: #fd79a8;
+            --purple: #a29bfe;
+            --yellow: #ffeaa7;
+            --cyan: #81ecec;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 32px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* ── Header ── */
+        .header {
+            margin-bottom: 36px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        .header h1 {
+            font-size: 26px;
+            font-weight: 700;
+        }
+        .header h1 span { color: var(--accent-light); }
+        .header .sub {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        /* ── Architecture overview ── */
+        .arch-box {
+            background: linear-gradient(135deg, rgba(108,92,231,0.06), rgba(0,206,201,0.06));
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px 32px;
+            margin-bottom: 40px;
+        }
+        .arch-box h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--accent-light);
+            margin-bottom: 14px;
+        }
+
+        .page-nav {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .page-nav-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: default;
+        }
+        .page-nav-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .page-nav-item .num {
+            font-size: 24px;
+            font-weight: 700;
+            display: block;
+        }
+        .page-nav-item .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .page-nav-item .sources {
+            font-size: 10px;
+            color: var(--text-dim);
+            font-family: monospace;
+            margin-top: 6px;
+        }
+
+        .nav-color-1 .num { color: var(--green); }
+        .nav-color-2 .num { color: var(--orange); }
+        .nav-color-3 .num { color: var(--pink); }
+        .nav-color-4 .num { color: var(--blue); }
+        .nav-color-5 .num { color: var(--purple); }
+
+        /* ── Page Section ── */
+        .page-section {
+            margin-bottom: 56px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 8px;
+        }
+        .page-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            flex-shrink: 0;
+            color: #fff;
+        }
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .page-desc {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 20px;
+            margin-left: 58px;
+        }
+
+        /* Data sources row */
+        .data-sources {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            margin-left: 58px;
+            flex-wrap: wrap;
+        }
+        .ds-tag {
+            font-size: 11px;
+            font-family: 'SF Mono', monospace;
+            padding: 3px 10px;
+            border-radius: 4px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        /* ── Wireframe ── */
+        .wireframe {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .wf-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+        }
+
+        /* Wireframe rows */
+        .wf-row {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        .wf-row:last-child { margin-bottom: 0; }
+
+        /* Wireframe blocks */
+        .wf-block {
+            border: 1.5px dashed var(--border-light);
+            border-radius: 10px;
+            padding: 16px;
+            flex: 1;
+            min-height: 80px;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .wf-block:hover {
+            border-color: var(--accent);
+            background: rgba(108,92,231,0.03);
+        }
+
+        .wf-block-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .wf-block-type {
+            font-size: 11px;
+            color: var(--text-dim);
+            font-family: monospace;
+        }
+        .wf-block-detail {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+        .wf-block-metrics {
+            margin-top: 8px;
+        }
+        .wf-metric {
+            font-size: 11px;
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 3px;
+            margin: 2px 3px 2px 0;
+            background: rgba(108,92,231,0.1);
+            color: var(--accent-light);
+            font-family: monospace;
+        }
+
+        /* Chart type icon */
+        .chart-icon {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            font-size: 16px;
+            opacity: 0.5;
+        }
+
+        /* Scorecard style blocks */
+        .wf-scorecards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+        }
+        .wf-scorecard {
+            border: 1.5px dashed var(--border-light);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .wf-scorecard .sc-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dim);
+        }
+        .wf-scorecard .sc-label {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+        .wf-scorecard .sc-delta {
+            font-size: 10px;
+            color: var(--green-dim);
+            margin-top: 2px;
+        }
+
+        /* Filter bar */
+        .wf-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+        .wf-filter {
+            font-size: 11px;
+            padding: 4px 12px;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .wf-filter::before {
+            content: '▾';
+            font-size: 9px;
+        }
+
+        /* Size helpers */
+        .flex-2 { flex: 2; }
+        .flex-3 { flex: 3; }
+        .h-200 { min-height: 200px; }
+        .h-280 { min-height: 280px; }
+        .h-320 { min-height: 320px; }
+
+        /* Color accents for pages */
+        .pg-green .page-badge { background: var(--green); }
+        .pg-green .wf-block-title { color: var(--green); }
+
+        .pg-orange .page-badge { background: var(--orange); color: #333; }
+        .pg-orange .wf-block-title { color: var(--orange); }
+
+        .pg-pink .page-badge { background: var(--pink); }
+        .pg-pink .wf-block-title { color: var(--pink); }
+
+        .pg-blue .page-badge { background: var(--blue); color: #1a1d27; }
+        .pg-blue .wf-block-title { color: var(--blue); }
+
+        .pg-purple .page-badge { background: var(--purple); color: #1a1d27; }
+        .pg-purple .wf-block-title { color: var(--purple); }
+
+        /* Notes box */
+        .notes-box {
+            background: var(--card-alt);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px 22px;
+            margin-top: 16px;
+        }
+        .notes-box h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--yellow);
+            margin-bottom: 8px;
+        }
+        .notes-box ul {
+            list-style: none;
+            padding: 0;
+        }
+        .notes-box li {
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 3px 0;
+            padding-left: 16px;
+            position: relative;
+        }
+        .notes-box li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--text-dim);
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 48px 0;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 11px;
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Global filters section */
+        .global-filters {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 40px;
+        }
+        .global-filters h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--cyan);
+        }
+        .gf-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .gf-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+        .gf-item .gf-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .gf-item .gf-desc {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        @media (max-width: 900px) {
+            body { padding: 16px; }
+            .page-nav { grid-template-columns: repeat(2, 1fr); }
+            .wf-row { flex-direction: column; }
+            .gf-grid { grid-template-columns: repeat(2, 1fr); }
+            .wf-scorecards { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════════════ HEADER ═══════════════════ -->
+    <div class="header">
+        <h1><span>Flood-It</span> — Looker Studio Dashboard Blueprint</h1>
+        <div class="sub">Hướng dẫn phân chia pages, layout wireframe, chart types & data source mapping cho Google Looker Studio</div>
+    </div>
+
+    <!-- ═══════════════════ ARCHITECTURE ═══════════════════ -->
+    <div class="arch-box">
+        <h3>Kiến trúc Report — 5 Pages</h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:4px;">
+            Nguyên tắc chia: mỗi page phục vụ <strong style="color:var(--text)">1 câu hỏi kinh doanh chính</strong> của PO, data source tối thiểu (1-2 mart tables), tránh scroll quá dài. Page 1 là tổng quan — mở ra là nắm ngay pulse của game.
+        </p>
+        <div class="page-nav">
+            <div class="page-nav-item nav-color-1">
+                <span class="num">P1</span>
+                <span class="label">Product Overview</span>
+                <span class="sources">mart_daily_kpis</span>
+            </div>
+            <div class="page-nav-item nav-color-2">
+                <span class="num">P2</span>
+                <span class="label">Retention & Cohorts</span>
+                <span class="sources">mart_retention_cohorts<br>mart_player_segments</span>
+            </div>
+            <div class="page-nav-item nav-color-3">
+                <span class="num">P3</span>
+                <span class="label">Revenue & Monetization</span>
+                <span class="sources">mart_revenue_daily<br>mart_daily_kpis</span>
+            </div>
+            <div class="page-nav-item nav-color-4">
+                <span class="num">P4</span>
+                <span class="label">Engagement & Sessions</span>
+                <span class="sources">mart_session_stats<br>mart_daily_kpis</span>
+            </div>
+            <div class="page-nav-item nav-color-5">
+                <span class="num">P5</span>
+                <span class="label">Game Design & Geo</span>
+                <span class="sources">mart_level_funnel<br>mart_geo_stats</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════ GLOBAL FILTERS ═══════════════════ -->
+    <div class="global-filters">
+        <h3>Global Controls (áp dụng tất cả pages)</h3>
+        <div class="gf-grid">
+            <div class="gf-item">
+                <div class="gf-name">Date Range</div>
+                <div class="gf-desc">Looker built-in date picker, default: Last 30 days</div>
+            </div>
+            <div class="gf-item">
+                <div class="gf-name">Platform</div>
+                <div class="gf-desc">Drop-down: All / Android / iOS / Web</div>
+            </div>
+            <div class="gf-item">
+                <div class="gf-name">Traffic Source</div>
+                <div class="gf-desc">Drop-down: direct, organic, paid, referral...</div>
+            </div>
+            <div class="gf-item">
+                <div class="gf-name">Compare Period</div>
+                <div class="gf-desc">Previous period / Previous year (delta %)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- PAGE 1: PRODUCT OVERVIEW -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="page-section pg-green">
+        <div class="page-header">
+            <div class="page-badge">P1</div>
+            <div class="page-title">Product Overview</div>
+        </div>
+        <div class="page-desc">
+            Câu hỏi: <strong style="color:var(--text)">"Game đang healthy hay không?"</strong> — Mở report là thấy ngay DAU, MAU, revenue, new users, session quality trong 1 cái nhìn.
+        </div>
+        <div class="data-sources">
+            <span class="ds-tag" style="border-color:var(--green);">mart_daily_kpis</span>
+        </div>
+
+        <div class="wireframe">
+            <div class="wf-label">Layout Wireframe — Page 1</div>
+
+            <!-- Row 1: Scorecards -->
+            <div class="wf-row">
+                <div style="width:100%">
+                    <div class="wf-scorecards">
+                        <div class="wf-scorecard">
+                            <div class="sc-value">###</div>
+                            <div class="sc-label">DAU (avg)</div>
+                            <div class="sc-delta">▲ +12% vs prev</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">###</div>
+                            <div class="sc-label">MAU</div>
+                            <div class="sc-delta">▲ +5% vs prev</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">##%</div>
+                            <div class="sc-label">Stickiness</div>
+                            <div class="sc-delta">DAU/MAU</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">$###</div>
+                            <div class="sc-label">Total Revenue</div>
+                            <div class="sc-delta">▲ +8% vs prev</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">###</div>
+                            <div class="sc-label">New Users</div>
+                            <div class="sc-delta">Daily avg</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">#.#</div>
+                            <div class="sc-label">Sessions/DAU</div>
+                            <div class="sc-delta">Frequency</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Main trend + New users -->
+            <div class="wf-row" style="margin-top:14px;">
+                <div class="wf-block flex-3 h-280">
+                    <span class="chart-icon">📈</span>
+                    <div class="wf-block-title">DAU / MAU Trend</div>
+                    <div class="wf-block-type">Time Series (dual axis)</div>
+                    <div class="wf-block-detail">
+                        Trục trái: DAU (line) — Trục phải: MAU (area, opacity thấp)<br>
+                        Dimension: <code>date</code> — Breakdown: <code>platform</code> (optional)
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">dau</span>
+                        <span class="wf-metric">mau</span>
+                        <span class="wf-metric">stickiness</span>
+                    </div>
+                </div>
+                <div class="wf-block flex-2 h-280">
+                    <span class="chart-icon">📊</span>
+                    <div class="wf-block-title">New Users vs DAU</div>
+                    <div class="wf-block-type">Combo Chart (bar + line)</div>
+                    <div class="wf-block-detail">
+                        Bar: new_users (daily) — Line: DAU<br>
+                        Giúp xem organic growth có bền không hay phụ thuộc new install
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">new_users</span>
+                        <span class="wf-metric">dau</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Revenue + Sessions -->
+            <div class="wf-row">
+                <div class="wf-block h-200">
+                    <span class="chart-icon">💰</span>
+                    <div class="wf-block-title">Revenue Trend (Quick View)</div>
+                    <div class="wf-block-type">Area Chart</div>
+                    <div class="wf-block-detail">
+                        Tổng revenue daily, sparkline style. Click-through → Page 3
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">total_revenue</span>
+                        <span class="wf-metric">arpu</span>
+                    </div>
+                </div>
+                <div class="wf-block h-200">
+                    <span class="chart-icon">⏱️</span>
+                    <div class="wf-block-title">Session Quality Snapshot</div>
+                    <div class="wf-block-type">Line Chart</div>
+                    <div class="wf-block-detail">
+                        Avg session duration + avg engagement/session. Click-through → Page 4
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">avg_session_duration_sec</span>
+                        <span class="wf-metric">avg_engagement_sec</span>
+                    </div>
+                </div>
+                <div class="wf-block h-200">
+                    <span class="chart-icon">🔄</span>
+                    <div class="wf-block-title">Stickiness Trend</div>
+                    <div class="wf-block-type">Line Chart + Reference Line</div>
+                    <div class="wf-block-detail">
+                        DAU/MAU over time. Reference line tại benchmark 20%
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">stickiness</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-box">
+            <h4>Ghi chú thiết kế Page 1</h4>
+            <ul>
+                <li>Scorecards row nên bật <strong>comparison</strong> (so với previous period) để thấy ngay xu hướng tăng/giảm</li>
+                <li>Dùng <strong>conditional formatting</strong> trên scorecard: xanh nếu tăng, đỏ nếu giảm</li>
+                <li>DAU/MAU chart nên có <strong>optional breakdown</strong> bằng platform để PO drill down khi cần</li>
+                <li>Revenue & Session blocks chỉ là preview — click vào navigate sang page chi tiết tương ứng</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- PAGE 2: RETENTION & COHORTS -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="page-section pg-orange">
+        <div class="page-header">
+            <div class="page-badge">P2</div>
+            <div class="page-title">Retention & Cohorts</div>
+        </div>
+        <div class="page-desc">
+            Câu hỏi: <strong style="color:var(--text)">"User có quay lại không? Nhóm nào đang churn?"</strong> — Retention heatmap, cohort curves, player segment breakdown.
+        </div>
+        <div class="data-sources">
+            <span class="ds-tag" style="border-color:var(--orange);">mart_retention_cohorts</span>
+            <span class="ds-tag" style="border-color:var(--orange);">mart_player_segments</span>
+        </div>
+
+        <div class="wireframe">
+            <div class="wf-label">Layout Wireframe — Page 2</div>
+
+            <!-- Scorecards -->
+            <div class="wf-row">
+                <div style="width:100%">
+                    <div class="wf-scorecards">
+                        <div class="wf-scorecard">
+                            <div class="sc-value">##%</div>
+                            <div class="sc-label">D1 Retention (avg)</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">##%</div>
+                            <div class="sc-label">D7 Retention (avg)</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">##%</div>
+                            <div class="sc-label">D30 Retention (avg)</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">###</div>
+                            <div class="sc-label">Avg Cohort Size</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 1: Heatmap -->
+            <div class="wf-row" style="margin-top:14px;">
+                <div class="wf-block h-320" style="width:100%;">
+                    <span class="chart-icon">🟧</span>
+                    <div class="wf-block-title">Retention Cohort Heatmap</div>
+                    <div class="wf-block-type">Pivot Table with Heatmap Conditional Formatting</div>
+                    <div class="wf-block-detail">
+                        Rows: <code>cohort_date</code> (weekly hoặc daily) — Columns: D1, D3, D7, D14, D30<br>
+                        Cell values: retention % — Color scale: xanh đậm (cao) → đỏ (thấp)<br>
+                        <em>Đây là chart QUAN TRỌNG NHẤT của page, chiếm ~40% diện tích</em>
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">cohort_date</span>
+                        <span class="wf-metric">cohort_size</span>
+                        <span class="wf-metric">d1_retention</span>
+                        <span class="wf-metric">d3_retention</span>
+                        <span class="wf-metric">d7_retention</span>
+                        <span class="wf-metric">d14_retention</span>
+                        <span class="wf-metric">d30_retention</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Retention curve + Segments -->
+            <div class="wf-row">
+                <div class="wf-block flex-2 h-280">
+                    <span class="chart-icon">📉</span>
+                    <div class="wf-block-title">Retention Curve (D1 → D30)</div>
+                    <div class="wf-block-type">Line Chart — Multi-cohort overlay</div>
+                    <div class="wf-block-detail">
+                        Mỗi line = 1 cohort week. X-axis: days since install (0→30). Y-axis: retention %<br>
+                        Giúp so sánh trực quan cohort nào retain tốt hơn
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">d1_retention...d30_retention</span>
+                        <span class="wf-metric">cohort_date (as series)</span>
+                    </div>
+                </div>
+                <div class="wf-block flex-1 h-280">
+                    <span class="chart-icon">🍩</span>
+                    <div class="wf-block-title">Player Segment Distribution</div>
+                    <div class="wf-block-type">Donut Chart</div>
+                    <div class="wf-block-detail">
+                        7 segments: whale, dolphin, minnow, engaged_free, casual, at_risk, churned<br>
+                        Show % of total users
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">player_segment</span>
+                        <span class="wf-metric">COUNT(user)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Segment table -->
+            <div class="wf-row">
+                <div class="wf-block" style="width:100%;">
+                    <span class="chart-icon">📋</span>
+                    <div class="wf-block-title">Segment Detail Table</div>
+                    <div class="wf-block-type">Table with Bars + Heatmap</div>
+                    <div class="wf-block-detail">
+                        Columns: segment | user_count | avg_revenue | avg_active_days | avg_level | avg_engagement_min<br>
+                        Sortable, bar indicators cho so sánh nhanh giữa segments
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">player_segment</span>
+                        <span class="wf-metric">rfm_total</span>
+                        <span class="wf-metric">total_revenue</span>
+                        <span class="wf-metric">active_days</span>
+                        <span class="wf-metric">max_level</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-box">
+            <h4>Ghi chú thiết kế Page 2</h4>
+            <ul>
+                <li>Heatmap: dùng <strong>Pivot Table</strong> trong Looker Studio, bật conditional color trên cells</li>
+                <li>Retention curve: nếu quá nhiều cohorts, cho filter top 4-6 cohorts gần nhất</li>
+                <li>Segment donut: dùng custom color mapping — whale = vàng gold, churned = đỏ, engaged_free = xanh...</li>
+                <li>Filter thêm: <strong>traffic_source</strong> từ mart_retention_cohorts để compare retention theo nguồn UA</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- PAGE 3: REVENUE & MONETIZATION -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="page-section pg-pink">
+        <div class="page-header">
+            <div class="page-badge">P3</div>
+            <div class="page-title">Revenue & Monetization</div>
+        </div>
+        <div class="page-desc">
+            Câu hỏi: <strong style="color:var(--text)">"Tiền đến từ đâu? Monetization có sustainable không?"</strong> — Revenue trend, ARPU/ARPPU, payer conversion, revenue mix.
+        </div>
+        <div class="data-sources">
+            <span class="ds-tag" style="border-color:var(--pink);">mart_revenue_daily</span>
+            <span class="ds-tag" style="border-color:var(--pink);">mart_daily_kpis</span>
+            <span class="ds-tag" style="border-color:var(--pink);">mart_player_segments</span>
+        </div>
+
+        <div class="wireframe">
+            <div class="wf-label">Layout Wireframe — Page 3</div>
+
+            <!-- Scorecards -->
+            <div class="wf-row">
+                <div style="width:100%">
+                    <div class="wf-scorecards">
+                        <div class="wf-scorecard">
+                            <div class="sc-value">$###</div>
+                            <div class="sc-label">Total Revenue</div>
+                            <div class="sc-delta">▲ period total</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">$#.##</div>
+                            <div class="sc-label">ARPU</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">$#.##</div>
+                            <div class="sc-label">ARPPU</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">#.#%</div>
+                            <div class="sc-label">Payer Conv. Rate</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">###</div>
+                            <div class="sc-label">Unique Payers</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 1: Revenue trend + Revenue type -->
+            <div class="wf-row" style="margin-top:14px;">
+                <div class="wf-block flex-3 h-280">
+                    <span class="chart-icon">📈</span>
+                    <div class="wf-block-title">Revenue Trend (Daily)</div>
+                    <div class="wf-block-type">Stacked Area Chart</div>
+                    <div class="wf-block-detail">
+                        Stacked by <code>revenue_type</code>: IAP (chính) | Ad | Virtual<br>
+                        Trục X: date — Trục Y: total_revenue<br>
+                        Cho thấy revenue mix thay đổi theo thời gian
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">total_revenue</span>
+                        <span class="wf-metric">revenue_type</span>
+                        <span class="wf-metric">date</span>
+                    </div>
+                </div>
+                <div class="wf-block flex-1 h-280">
+                    <span class="chart-icon">🍩</span>
+                    <div class="wf-block-title">Revenue Mix</div>
+                    <div class="wf-block-type">Donut Chart</div>
+                    <div class="wf-block-detail">
+                        Share of total revenue by type: IAP vs Ad vs Virtual<br>
+                        Giúp PO biết nguồn thu chính
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">revenue_type</span>
+                        <span class="wf-metric">SUM(total_revenue)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: ARPU/ARPPU + Conversion -->
+            <div class="wf-row">
+                <div class="wf-block h-200">
+                    <span class="chart-icon">📊</span>
+                    <div class="wf-block-title">ARPU & ARPPU Trend</div>
+                    <div class="wf-block-type">Dual-Axis Line Chart</div>
+                    <div class="wf-block-detail">
+                        Trục trái: ARPU (line xanh) — Trục phải: ARPPU (line hồng)<br>
+                        ARPPU tăng = payer spending more, ARPU tăng = better monetization overall
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">arpu</span>
+                        <span class="wf-metric">arppu</span>
+                    </div>
+                </div>
+                <div class="wf-block h-200">
+                    <span class="chart-icon">🔄</span>
+                    <div class="wf-block-title">Payer Conversion Rate</div>
+                    <div class="wf-block-type">Line + Reference Line (benchmark 3%)</div>
+                    <div class="wf-block-detail">
+                        paying_users / DAU daily. Reference line = industry benchmark<br>
+                        Dưới 2% = cần review IAP offering
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">payer_conversion_rate</span>
+                        <span class="wf-metric">paying_users</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Segment revenue -->
+            <div class="wf-row">
+                <div class="wf-block flex-1 h-200">
+                    <span class="chart-icon">📊</span>
+                    <div class="wf-block-title">Revenue by Player Segment</div>
+                    <div class="wf-block-type">Stacked Bar Chart (horizontal)</div>
+                    <div class="wf-block-detail">
+                        Mỗi bar = 1 segment, length = total revenue<br>
+                        Whale thường chiếm 50%+ → validate Pareto
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">player_segment</span>
+                        <span class="wf-metric">segment_revenue</span>
+                    </div>
+                </div>
+                <div class="wf-block flex-1 h-200">
+                    <span class="chart-icon">📋</span>
+                    <div class="wf-block-title">Transaction Summary Table</div>
+                    <div class="wf-block-type">Table with Sparklines</div>
+                    <div class="wf-block-detail">
+                        Columns: revenue_type | payers | transactions | revenue | avg_value<br>
+                        Optional sparkline column cho 7-day trend
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">unique_payers</span>
+                        <span class="wf-metric">transaction_count</span>
+                        <span class="wf-metric">avg_transaction_value</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-box">
+            <h4>Ghi chú thiết kế Page 3</h4>
+            <ul>
+                <li>Revenue stacked area: dùng <strong>custom color</strong> — IAP=hồng đậm, Ad=xanh nhạt, Virtual=tím nhạt</li>
+                <li>ARPU vs ARPPU: nên dùng <strong>dual Y-axis</strong> vì scale rất khác nhau</li>
+                <li>Segment revenue bar: sort descending by revenue, bật data label % trên mỗi segment</li>
+                <li>Có thể thêm <strong>calculated field</strong> trong Looker: Revenue per Session = total_revenue / total_sessions</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- PAGE 4: ENGAGEMENT & SESSIONS -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="page-section pg-blue">
+        <div class="page-header">
+            <div class="page-badge">P4</div>
+            <div class="page-title">Engagement & Sessions</div>
+        </div>
+        <div class="page-desc">
+            Câu hỏi: <strong style="color:var(--text)">"User chơi bao lâu, bao sâu? Session quality có ổn định không?"</strong> — Duration, frequency, engagement depth, session distribution.
+        </div>
+        <div class="data-sources">
+            <span class="ds-tag" style="border-color:var(--blue);">mart_session_stats</span>
+            <span class="ds-tag" style="border-color:var(--blue);">mart_daily_kpis</span>
+        </div>
+
+        <div class="wireframe">
+            <div class="wf-label">Layout Wireframe — Page 4</div>
+
+            <!-- Scorecards -->
+            <div class="wf-row">
+                <div style="width:100%">
+                    <div class="wf-scorecards">
+                        <div class="wf-scorecard">
+                            <div class="sc-value">#:##</div>
+                            <div class="sc-label">Avg Session (min:sec)</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">#:##</div>
+                            <div class="sc-label">Median Session</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">#.#</div>
+                            <div class="sc-label">Sessions / DAU</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">#.#</div>
+                            <div class="sc-label">Levels / Session</div>
+                        </div>
+                        <div class="wf-scorecard">
+                            <div class="sc-value">###</div>
+                            <div class="sc-label">Avg Events / Session</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 1: Session duration + Distribution -->
+            <div class="wf-row" style="margin-top:14px;">
+                <div class="wf-block flex-3 h-280">
+                    <span class="chart-icon">📈</span>
+                    <div class="wf-block-title">Session Duration Trend (Avg vs Median)</div>
+                    <div class="wf-block-type">Dual Line Chart</div>
+                    <div class="wf-block-detail">
+                        Line 1: avg_duration_sec — Line 2: median_duration_sec<br>
+                        Gap lớn giữa avg vs median = có outlier sessions (AFK users)
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">avg_duration_sec</span>
+                        <span class="wf-metric">median_duration_sec</span>
+                        <span class="wf-metric">date</span>
+                    </div>
+                </div>
+                <div class="wf-block flex-2 h-280">
+                    <span class="chart-icon">📊</span>
+                    <div class="wf-block-title">Session Length Distribution</div>
+                    <div class="wf-block-type">100% Stacked Bar Chart</div>
+                    <div class="wf-block-detail">
+                        4 buckets: &lt;1min | 1-5min | 5-15min | 15min+<br>
+                        Track distribution shift over time (weekly grain)
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">sessions_under_1min</span>
+                        <span class="wf-metric">sessions_1_5min</span>
+                        <span class="wf-metric">sessions_5_15min</span>
+                        <span class="wf-metric">sessions_over_15min</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Engagement + Frequency -->
+            <div class="wf-row">
+                <div class="wf-block h-200">
+                    <span class="chart-icon">⏱️</span>
+                    <div class="wf-block-title">True Engagement Time</div>
+                    <div class="wf-block-type">Area Chart</div>
+                    <div class="wf-block-detail">
+                        avg_engagement_sec daily — "thời gian thực sự tương tác"<br>
+                        So sánh với session duration → tỉ lệ engaged time
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">avg_engagement_sec</span>
+                    </div>
+                </div>
+                <div class="wf-block h-200">
+                    <span class="chart-icon">🔄</span>
+                    <div class="wf-block-title">Sessions per DAU Trend</div>
+                    <div class="wf-block-type">Line Chart</div>
+                    <div class="wf-block-detail">
+                        Frequency: số lần user mở game / ngày<br>
+                        Tăng = pull-back loop hoạt động tốt
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">sessions_per_dau</span>
+                    </div>
+                </div>
+                <div class="wf-block h-200">
+                    <span class="chart-icon">🎮</span>
+                    <div class="wf-block-title">Levels per Session</div>
+                    <div class="wf-block-type">Line Chart</div>
+                    <div class="wf-block-detail">
+                        Trung bình level hoàn thành mỗi session<br>
+                        Giảm dần = content consumption chậm lại
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">avg_levels_per_session</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-box">
+            <h4>Ghi chú thiết kế Page 4</h4>
+            <ul>
+                <li>Duration trend: convert seconds → minutes trong <strong>calculated field</strong> để dễ đọc hơn</li>
+                <li>Session distribution: dùng <strong>100% stacked</strong> chứ không phải absolute — focus vào shift tỉ lệ</li>
+                <li>Có thể thêm <strong>calculated field</strong>: engagement_ratio = avg_engagement_sec / avg_duration_sec (% thời gian thực sự chơi)</li>
+                <li>Levels/session giảm kết hợp duration tăng = player gặp difficulty wall → cross-check Page 5</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- PAGE 5: GAME DESIGN & GEO -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="page-section pg-purple">
+        <div class="page-header">
+            <div class="page-badge">P5</div>
+            <div class="page-title">Game Design & Geo</div>
+        </div>
+        <div class="page-desc">
+            Câu hỏi: <strong style="color:var(--text)">"Level nào đang block user? Market nào có giá trị cao nhất?"</strong> — Level funnel, difficulty curve, geographic distribution.
+        </div>
+        <div class="data-sources">
+            <span class="ds-tag" style="border-color:var(--purple);">mart_level_funnel</span>
+            <span class="ds-tag" style="border-color:var(--purple);">mart_geo_stats</span>
+        </div>
+
+        <div class="wireframe">
+            <div class="wf-label">Layout Wireframe — Page 5</div>
+
+            <!-- Row 1: Level funnel -->
+            <div class="wf-row">
+                <div class="wf-block h-320" style="width:100%;">
+                    <span class="chart-icon">📉</span>
+                    <div class="wf-block-title">Level Completion Funnel</div>
+                    <div class="wf-block-type">Bar Chart (vertical, descending) — Hero chart</div>
+                    <div class="wf-block-detail">
+                        X-axis: level_number (1→100) — Y-axis: completion_rate (%)<br>
+                        <strong>Key insight:</strong> sharp drops = difficulty walls cần nerf<br>
+                        Hover tooltip: users_completed, avg_attempts, avg_best_score
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">level_number</span>
+                        <span class="wf-metric">completion_rate</span>
+                        <span class="wf-metric">users_completed</span>
+                        <span class="wf-metric">total_users</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Attempts + Score + Pacing -->
+            <div class="wf-row">
+                <div class="wf-block h-200">
+                    <span class="chart-icon">🔁</span>
+                    <div class="wf-block-title">Avg Attempts per Level</div>
+                    <div class="wf-block-type">Bar Chart</div>
+                    <div class="wf-block-detail">
+                        Spike = quá khó. Dùng cùng completion rate để pinpoint problem levels
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">level_number</span>
+                        <span class="wf-metric">avg_attempts</span>
+                    </div>
+                </div>
+                <div class="wf-block h-200">
+                    <span class="chart-icon">⭐</span>
+                    <div class="wf-block-title">Avg Best Score per Level</div>
+                    <div class="wf-block-type">Line Chart</div>
+                    <div class="wf-block-detail">
+                        Score curve qua các level — phản ánh skill ceiling & reward pacing
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">level_number</span>
+                        <span class="wf-metric">avg_best_score</span>
+                    </div>
+                </div>
+                <div class="wf-block h-200">
+                    <span class="chart-icon">📅</span>
+                    <div class="wf-block-title">Avg Days to Complete Level</div>
+                    <div class="wf-block-type">Line Chart</div>
+                    <div class="wf-block-detail">
+                        Content pacing — bao lâu user mới đến level đó từ lúc install
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">level_number</span>
+                        <span class="wf-metric">avg_days_to_complete</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Geo -->
+            <div class="wf-row">
+                <div class="wf-block flex-2 h-280">
+                    <span class="chart-icon">🗺️</span>
+                    <div class="wf-block-title">Users by Country (Geo Map)</div>
+                    <div class="wf-block-type">Geo Map (Filled Map)</div>
+                    <div class="wf-block-detail">
+                        Metric: total_users — Color intensity = user volume<br>
+                        Looker Studio built-in geo chart, dimension = geo_country
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">geo_country</span>
+                        <span class="wf-metric">total_users</span>
+                    </div>
+                </div>
+                <div class="wf-block flex-1 h-280">
+                    <span class="chart-icon">📊</span>
+                    <div class="wf-block-title">Top 10 Countries — Revenue & Payer Rate</div>
+                    <div class="wf-block-type">Horizontal Bar (sorted)</div>
+                    <div class="wf-block-detail">
+                        Bar length = total_revenue<br>
+                        Data label = payer_rate %<br>
+                        Insight: high-user nhưng low-payer = localization opportunity
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">geo_country</span>
+                        <span class="wf-metric">total_revenue</span>
+                        <span class="wf-metric">payer_rate</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 4: Geo table -->
+            <div class="wf-row">
+                <div class="wf-block" style="width:100%;">
+                    <span class="chart-icon">📋</span>
+                    <div class="wf-block-title">Country Performance Table</div>
+                    <div class="wf-block-type">Sortable Table with Heatmap</div>
+                    <div class="wf-block-detail">
+                        Columns: country | continent | users | payers | revenue | payer_rate | avg_active_days | avg_level | avg_engagement_min<br>
+                        Sortable + conditional coloring — compare market quality at a glance
+                    </div>
+                    <div class="wf-block-metrics">
+                        <span class="wf-metric">all mart_geo_stats fields</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-box">
+            <h4>Ghi chú thiết kế Page 5</h4>
+            <ul>
+                <li>Level funnel chart là <strong>hero visual</strong> — nên rộng full-width, dùng bar chart thay vì funnel chart (funnel chart chỉ hỗ trợ ít step)</li>
+                <li>Geo map: set metric thành <code>total_users</code> mặc định, cho phép switch sang <code>total_revenue</code> bằng <strong>metric picker</strong></li>
+                <li>Level charts: nếu >100 levels, thêm <strong>slider filter</strong> cho level_number range</li>
+                <li>Country table: bật <strong>bar conditional formatting</strong> cho các cột numeric để dễ scan</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- IMPLEMENTATION GUIDE -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="page-section">
+        <div class="page-header">
+            <div class="page-badge" style="background:var(--text-dim);">⚙️</div>
+            <div class="page-title">Implementation Guide — Looker Studio Setup</div>
+        </div>
+
+        <div class="wireframe" style="margin-top:16px;">
+            <div class="wf-label">Step-by-step Setup</div>
+
+            <div class="wf-row" style="flex-direction:column; gap:16px;">
+                <!-- Step 1 -->
+                <div class="wf-block">
+                    <div class="wf-block-title" style="color:var(--green);">Step 1: Tạo Data Sources trong Looker Studio</div>
+                    <div class="wf-block-detail">
+                        Kết nối <strong>BigQuery</strong> → Project ID → Dataset <code>game_marts</code><br><br>
+                        Tạo 7 data sources tương ứng 7 bảng mart. Mỗi source chỉ cần SELECT * (data đã pre-aggregated).<br><br>
+                        <strong>Lưu ý:</strong> mart_daily_kpis, mart_session_stats, mart_retention_cohorts có field <code>date</code> → set làm Date Range dimension để Global Filter hoạt động.
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="wf-block">
+                    <div class="wf-block-title" style="color:var(--orange);">Step 2: Tạo Calculated Fields phổ biến</div>
+                    <div class="wf-block-detail" style="font-family:monospace; font-size:12px; line-height:2;">
+                        <code>session_duration_min</code> = avg_session_duration_sec / 60<br>
+                        <code>engagement_min</code> = avg_engagement_sec / 60<br>
+                        <code>engagement_ratio</code> = avg_engagement_sec / avg_session_duration_sec<br>
+                        <code>revenue_per_session</code> = total_revenue / total_sessions<br>
+                        <code>retention_d1_pct</code> = d1_retention * 100  (nếu cần hiển thị %)<br>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="wf-block">
+                    <div class="wf-block-title" style="color:var(--blue);">Step 3: Thiết lập Global Controls</div>
+                    <div class="wf-block-detail">
+                        <strong>Date Range Control:</strong> Thêm ở header, set "Auto date range" = đúng field <code>date</code> của mỗi data source.<br>
+                        <strong>Platform Filter:</strong> Drop-down control, dimension = <code>platform</code>, áp dụng cross-page.<br>
+                        <strong>Compare Period:</strong> Bật "Comparison date range" = Previous Period trên từng chart cần so sánh.<br><br>
+                        <em>Tip:</em> Dùng <strong>Report-level filter</strong> (không phải page-level) để filter xuyên suốt 5 pages.
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="wf-block">
+                    <div class="wf-block-title" style="color:var(--purple);">Step 4: Theme & Navigation</div>
+                    <div class="wf-block-detail">
+                        <strong>Theme:</strong> Dark mode → consistent với data product. Hoặc dùng brand colors của Flood-It.<br>
+                        <strong>Navigation:</strong> Thêm <strong>page navigation bar</strong> ở top mỗi page (buttons link sang 5 pages).<br>
+                        <strong>Mobile:</strong> Looker Studio hỗ trợ responsive — test trên mobile view vì PO thường check on-the-go.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data source mapping table -->
+        <div class="wireframe">
+            <div class="wf-label">Data Source → Page Mapping</div>
+            <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                    <thead>
+                        <tr style="border-bottom:2px solid var(--border);">
+                            <th style="padding:10px 14px; text-align:left; color:var(--text-muted);">Data Source (Mart Table)</th>
+                            <th style="padding:10px 14px; text-align:center; color:var(--green);">P1</th>
+                            <th style="padding:10px 14px; text-align:center; color:var(--orange);">P2</th>
+                            <th style="padding:10px 14px; text-align:center; color:var(--pink);">P3</th>
+                            <th style="padding:10px 14px; text-align:center; color:var(--blue);">P4</th>
+                            <th style="padding:10px 14px; text-align:center; color:var(--purple);">P5</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:10px 14px; font-family:monospace; color:var(--accent-light);">mart_daily_kpis</td>
+                            <td style="text-align:center; font-size:16px;">●</td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center; font-size:12px; color:var(--text-dim);">○</td>
+                            <td style="text-align:center; font-size:12px; color:var(--text-dim);">○</td>
+                            <td style="text-align:center;"></td>
+                        </tr>
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:10px 14px; font-family:monospace; color:var(--accent-light);">mart_retention_cohorts</td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center; font-size:16px;">●</td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                        </tr>
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:10px 14px; font-family:monospace; color:var(--accent-light);">mart_revenue_daily</td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center; font-size:16px;">●</td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                        </tr>
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:10px 14px; font-family:monospace; color:var(--accent-light);">mart_player_segments</td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center; font-size:16px;">●</td>
+                            <td style="text-align:center; font-size:12px; color:var(--text-dim);">○</td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                        </tr>
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:10px 14px; font-family:monospace; color:var(--accent-light);">mart_session_stats</td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center; font-size:16px;">●</td>
+                            <td style="text-align:center;"></td>
+                        </tr>
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:10px 14px; font-family:monospace; color:var(--accent-light);">mart_level_funnel</td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center; font-size:16px;">●</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:10px 14px; font-family:monospace; color:var(--accent-light);">mart_geo_stats</td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center;"></td>
+                            <td style="text-align:center; font-size:16px;">●</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6" style="padding:10px 14px; font-size:11px; color:var(--text-dim);">
+                                ● = Primary data source &nbsp;&nbsp; ○ = Secondary (dùng thêm cho một số charts)
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Flood-It Game Analytics — Looker Studio Blueprint — Designed for Project Owner
+    </div>
+
+</body>
+</html>
