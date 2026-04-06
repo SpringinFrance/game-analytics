@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood-It — Level Drop Rate Diagnostic Analysis</title>
+    <style>
+        :root {
+            --bg: #0b0d13;
+            --surface: #12151e;
+            --card: #181c28;
+            --card-inner: #1e2233;
+            --border: #272d40;
+            --border-hi: #3a4260;
+            --text: #e4e7f0;
+            --text-m: #8b92a8;
+            --text-d: #555c72;
+            --accent: #7c6cf0;
+            --accent-s: rgba(124,108,240,0.10);
+            --red: #f87171; --red-s: rgba(248,113,113,0.10);
+            --orange: #fbbf24; --orange-s: rgba(251,191,36,0.10);
+            --green: #34d399; --green-s: rgba(52,211,153,0.10);
+            --blue: #60a5fa; --blue-s: rgba(96,165,250,0.10);
+            --pink: #f472b6; --pink-s: rgba(244,114,182,0.10);
+            --purple: #a78bfa; --purple-s: rgba(167,139,250,0.10);
+            --cyan: #67e8f9; --cyan-s: rgba(103,232,249,0.10);
+            --teal: #2dd4bf; --teal-s: rgba(45,212,191,0.10);
+            --yellow: #fde68a; --yellow-s: rgba(253,230,138,0.10);
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;padding:36px 44px;max-width:1480px;margin:0 auto}
+
+        .header{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+        .header h1{font-size:26px;font-weight:700}
+        .header h1 span{color:var(--red)}
+        .header .sub{color:var(--text-m);font-size:13px;margin-top:4px}
+
+        .divider{height:1px;background:var(--border);margin:44px 0}
+
+        /* Section */
+        .section{margin-bottom:48px}
+        .sec-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+        .sec-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+        .sec-title{font-size:19px;font-weight:700}
+        .sec-sub{color:var(--text-m);font-size:13px;margin-left:54px;margin-bottom:20px}
+
+        /* Schema box */
+        .schema-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px 28px;margin-bottom:32px}
+        .schema-box h3{font-size:14px;font-weight:600;margin-bottom:14px}
+        .schema-table{width:100%;border-collapse:collapse;font-size:13px}
+        .schema-table th{text-align:left;padding:8px 12px;border-bottom:2px solid var(--border);color:var(--text-d);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+        .schema-table td{padding:10px 12px;border-bottom:1px solid var(--border)}
+        .schema-table td:first-child{font-family:'SF Mono','Fira Code',monospace;color:var(--accent);font-size:12px;font-weight:500}
+        .field-type{font-size:10px;padding:2px 6px;border-radius:3px;font-family:monospace}
+        .ft-dim{background:var(--blue-s);color:var(--blue)}
+        .ft-metric{background:var(--green-s);color:var(--green)}
+        .ft-calc{background:var(--orange-s);color:var(--orange)}
+
+        /* Chart card */
+        .chart-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px;transition:all .2s}
+        .chart-card:hover{border-color:var(--border-hi);box-shadow:0 6px 24px rgba(0,0,0,.3)}
+
+        .cc-header{padding:20px 24px 16px;display:flex;justify-content:space-between;align-items:flex-start}
+        .cc-badge{display:flex;align-items:center;gap:10px}
+        .cc-num{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+        .cc-title{font-size:16px;font-weight:700;line-height:1.3}
+        .cc-chart-type{font-size:11px;color:var(--text-d);margin-top:2px}
+        .cc-priority{font-size:10px;font-weight:600;padding:3px 10px;border-radius:5px}
+        .pri-must{background:var(--red-s);color:var(--red)}
+        .pri-high{background:var(--orange-s);color:var(--orange)}
+        .pri-rec{background:var(--green-s);color:var(--green)}
+
+        .cc-body{padding:0 24px 20px}
+        .cc-desc{font-size:13px;color:var(--text-m);margin-bottom:16px;line-height:1.6}
+        .cc-desc strong{color:var(--text);font-weight:500}
+
+        /* Field mapping grid */
+        .field-map{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+        .fm-box{background:var(--card-inner);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+        .fm-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-d);margin-bottom:6px}
+        .fm-value{font-size:12px;color:var(--text-m);line-height:1.6}
+        .fm-value code{background:var(--accent-s);color:var(--accent);padding:1px 6px;border-radius:3px;font-size:11px;font-family:'SF Mono',monospace}
+        .fm-full{grid-column:span 2}
+
+        /* Wireframe mockup */
+        .wf-mockup{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px;position:relative}
+        .wf-mockup-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-d);margin-bottom:12px}
+
+        /* Chart visual mock - bar chart */
+        .mock-bars{display:flex;align-items:flex-end;gap:3px;height:120px;padding-top:10px}
+        .mock-bar{flex:1;border-radius:2px 2px 0 0;min-width:3px;transition:all .3s}
+        .mock-bar.normal{background:var(--blue);opacity:.6}
+        .mock-bar.drop{background:var(--red);opacity:.9}
+        .mock-bar.spike{background:var(--orange);opacity:.9}
+        .mock-x{display:flex;justify-content:space-between;font-size:9px;color:var(--text-d);margin-top:4px}
+
+        /* Scatter mock */
+        .mock-scatter{height:160px;position:relative;border-left:1px solid var(--border);border-bottom:1px solid var(--border)}
+        .mock-dot{width:8px;height:8px;border-radius:50%;position:absolute}
+        .mock-axis-label{position:absolute;font-size:9px;color:var(--text-d)}
+
+        /* Quadrant labels */
+        .quad-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;height:160px;border-left:1px solid var(--border);border-bottom:1px solid var(--border);position:relative}
+        .quad{display:flex;align-items:center;justify-content:center;font-size:10px;text-align:center;padding:8px;line-height:1.3}
+        .quad-tl{border-bottom:1px dashed var(--border);border-right:1px dashed var(--border);color:var(--orange)}
+        .quad-tr{border-bottom:1px dashed var(--border);color:var(--green)}
+        .quad-bl{border-right:1px dashed var(--border);color:var(--red)}
+        .quad-br{color:var(--text-d)}
+
+        /* Root cause */
+        .rc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+        .rc-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+        .rc-card h4{font-size:14px;font-weight:600;margin-bottom:8px}
+        .rc-card p{font-size:12px;color:var(--text-m);line-height:1.6}
+        .rc-card .rc-signal{font-size:11px;margin-top:10px;padding:6px 10px;border-radius:6px;font-family:monospace;line-height:1.5}
+
+        /* Action table */
+        .action-table{width:100%;border-collapse:collapse;font-size:12px}
+        .action-table th{text-align:left;padding:10px 14px;border-bottom:2px solid var(--border);color:var(--text-d);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+        .action-table td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+        .action-tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;margin-right:4px}
+        .at-nerf{background:var(--red-s);color:var(--red)}
+        .at-add{background:var(--green-s);color:var(--green)}
+        .at-tune{background:var(--orange-s);color:var(--orange)}
+        .at-monitor{background:var(--blue-s);color:var(--blue)}
+        .at-test{background:var(--purple-s);color:var(--purple)}
+
+        /* Calculated field box */
+        .calc-box{background:var(--card-inner);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:12px}
+        .calc-box .calc-name{font-size:13px;font-weight:600;color:var(--orange);margin-bottom:4px}
+        .calc-box .calc-formula{font-family:'SF Mono',monospace;font-size:12px;color:var(--accent);background:var(--accent-s);padding:6px 10px;border-radius:6px;display:block;margin:6px 0}
+        .calc-box .calc-desc{font-size:12px;color:var(--text-m)}
+
+        .footer{text-align:center;color:var(--text-d);font-size:11px;margin-top:48px;padding-top:24px;border-top:1px solid var(--border)}
+
+        @media(max-width:900px){body{padding:16px}.field-map{grid-template-columns:1fr}.fm-full{grid-column:span 1}.rc-grid{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<div class="header">
+    <h1><span>Drop Rate</span> Diagnostic Analysis — Flood-It Level Funnel</h1>
+    <div class="sub">Source: <code style="color:var(--accent)">mart_level_funnel</code> &bull; Chart recommendations &bull; Root-cause framework &bull; Action plan cho Game Design team</div>
+</div>
+
+<!-- ═══════════════ SCHEMA REFERENCE ═══════════════ -->
+<div class="schema-box">
+    <h3 style="color:var(--cyan);">mart_level_funnel — Schema & Field Reference</h3>
+    <table class="schema-table">
+        <thead>
+            <tr>
+                <th>Field</th>
+                <th>Type</th>
+                <th>Vai trò</th>
+                <th>Ý nghĩa</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>level_number</td>
+                <td><span class="field-type ft-dim">DIMENSION</span></td>
+                <td>X-Axis chính</td>
+                <td>Số thứ tự level (1, 2, 3... n). Grain = 1 row per level. Đây là trục chính để vẽ funnel.</td>
+            </tr>
+            <tr>
+                <td>users_completed</td>
+                <td><span class="field-type ft-metric">METRIC</span></td>
+                <td>Volume indicator</td>
+                <td>Số user unique đã vượt qua level đó. Giảm dần theo level — tạo hình dạng funnel tự nhiên.</td>
+            </tr>
+            <tr>
+                <td>total_users</td>
+                <td><span class="field-type ft-metric">METRIC</span></td>
+                <td>Baseline</td>
+                <td>Tổng user base (constant). Dùng làm denominator cho completion_rate.</td>
+            </tr>
+            <tr>
+                <td>completion_rate</td>
+                <td><span class="field-type ft-metric">METRIC</span></td>
+                <td>Primary Y-Axis</td>
+                <td><code>users_completed / total_users</code>. Tỷ lệ % user base đã hoàn thành level. Funnel chính.</td>
+            </tr>
+            <tr>
+                <td>avg_attempts</td>
+                <td><span class="field-type ft-metric">METRIC</span></td>
+                <td>Difficulty proxy</td>
+                <td>Trung bình số lần thử để vượt level. Cao = level khó. Spike = difficulty wall.</td>
+            </tr>
+            <tr>
+                <td>avg_best_score</td>
+                <td><span class="field-type ft-metric">METRIC</span></td>
+                <td>Skill indicator</td>
+                <td>Điểm cao trung bình tại level. Phản ánh skill ceiling & design fairness.</td>
+            </tr>
+            <tr>
+                <td>avg_days_to_complete</td>
+                <td><span class="field-type ft-metric">METRIC</span></td>
+                <td>Pacing indicator</td>
+                <td>Trung bình số ngày kể từ install → hoàn thành level. Đo content consumption speed.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ═══════════════ CALCULATED FIELDS ═══════════════ -->
+<div class="section">
+    <div class="sec-head">
+        <div class="sec-icon" style="background:var(--orange-s);color:var(--orange)">⚡</div>
+        <div class="sec-title" style="color:var(--orange)">Calculated Fields — Tạo thêm trong Looker Studio</div>
+    </div>
+    <div class="sec-sub">Các field bạn cần tạo thêm (không có sẵn trong mart) để phân tích drop rate chính xác</div>
+
+    <div class="calc-box">
+        <div class="calc-name">1. drop_rate (Level-over-Level Drop)</div>
+        <code class="calc-formula">completion_rate của level [N-1] − completion_rate của level [N]</code>
+        <div class="calc-desc"><strong>Ý nghĩa:</strong> % user base bị mất giữa 2 level liên tiếp. Đây là <strong>metric quan trọng nhất</strong> trong toàn bộ analysis. Dương = user drop, âm = không thể (funnel chỉ đi xuống). Trong Looker Studio: dùng <code>LAG()</code> window function hoặc tính trong BigQuery view mới.</div>
+    </div>
+
+    <div class="calc-box">
+        <div class="calc-name">2. drop_rate_pct (Drop Rate as % of previous level)</div>
+        <code class="calc-formula">(completion_rate[N-1] − completion_rate[N]) / completion_rate[N-1] × 100</code>
+        <div class="calc-desc"><strong>Ý nghĩa:</strong> % user bị mất <em>tương đối</em> so với level trước. Khác biệt: drop_rate là absolute, drop_rate_pct là relative. Level 80→81 drop 2% absolute có thể = 50% relative nếu chỉ còn 4% user.</div>
+    </div>
+
+    <div class="calc-box">
+        <div class="calc-name">3. difficulty_index (Composite Difficulty Score)</div>
+        <code class="calc-formula">avg_attempts × (1 − completion_rate) × 100</code>
+        <div class="calc-desc"><strong>Ý nghĩa:</strong> Kết hợp attempts + drop thành 1 chỉ số. Cao = level vừa khó vừa nhiều người bỏ. Dùng để rank "worst offender levels".</div>
+    </div>
+
+    <div class="calc-box">
+        <div class="calc-name">4. pacing_gap (Thời gian giữa 2 levels)</div>
+        <code class="calc-formula">avg_days_to_complete[N] − avg_days_to_complete[N-1]</code>
+        <div class="calc-desc"><strong>Ý nghĩa:</strong> Mất bao nhiêu ngày từ level trước sang level sau. Spike = pacing bottleneck — user bị kẹt quá lâu tại đó.</div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CHART RECOMMENDATIONS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="sec-head">
+        <div class="sec-icon" style="background:var(--accent-s);color:var(--accent)">📊</div>
+        <div class="sec-title">Chart Recommendations — Từ dễ → sâu</div>
+    </div>
+    <div class="sec-sub">6 charts xếp theo thứ tự ưu tiên: Chart 1-2 là bắt buộc (thấy ngay spike), Chart 3-4 là deep-dive, Chart 5-6 là root-cause</div>
+</div>
+
+<!-- ──────────── CHART 1 ──────────── -->
+<div class="chart-card">
+    <div class="cc-header">
+        <div class="cc-badge">
+            <div class="cc-num" style="background:var(--red)">C1</div>
+            <div>
+                <div class="cc-title">Level Completion Funnel</div>
+                <div class="cc-chart-type">Bar Chart (Vertical) — Hero chart, xem đầu tiên</div>
+            </div>
+        </div>
+        <span class="cc-priority pri-must">MUST-HAVE</span>
+    </div>
+    <div class="cc-body">
+        <div class="cc-desc">
+            <strong>Mục đích:</strong> Nhìn toàn cảnh funnel — bao nhiêu % user base đã vượt qua từng level. Hình dạng tự nhiên là <strong>giảm dần</strong> (decaying curve). Chỗ nào bar tụt đột ngột = <strong>cliff / difficulty wall</strong>. Đây là chart mà PO mở ra đầu tiên.
+        </div>
+
+        <!-- Wireframe -->
+        <div class="wf-mockup">
+            <div class="wf-mockup-label">Visual Preview</div>
+            <div class="mock-bars">
+                <div class="mock-bar normal" style="height:100%"></div>
+                <div class="mock-bar normal" style="height:92%"></div>
+                <div class="mock-bar normal" style="height:85%"></div>
+                <div class="mock-bar normal" style="height:78%"></div>
+                <div class="mock-bar normal" style="height:72%"></div>
+                <div class="mock-bar normal" style="height:68%"></div>
+                <div class="mock-bar normal" style="height:64%"></div>
+                <div class="mock-bar normal" style="height:60%"></div>
+                <div class="mock-bar normal" style="height:57%"></div>
+                <div class="mock-bar normal" style="height:54%"></div>
+                <div class="mock-bar normal" style="height:52%"></div>
+                <div class="mock-bar drop" style="height:35%"></div>
+                <div class="mock-bar drop" style="height:33%"></div>
+                <div class="mock-bar normal" style="height:31%"></div>
+                <div class="mock-bar normal" style="height:29%"></div>
+                <div class="mock-bar normal" style="height:28%"></div>
+                <div class="mock-bar normal" style="height:26%"></div>
+                <div class="mock-bar normal" style="height:25%"></div>
+                <div class="mock-bar normal" style="height:24%"></div>
+                <div class="mock-bar drop" style="height:14%"></div>
+                <div class="mock-bar normal" style="height:13%"></div>
+                <div class="mock-bar normal" style="height:12%"></div>
+                <div class="mock-bar normal" style="height:11%"></div>
+                <div class="mock-bar normal" style="height:10%"></div>
+                <div class="mock-bar normal" style="height:9%"></div>
+            </div>
+            <div class="mock-x">
+                <span>Lv 1</span>
+                <span style="color:var(--red);font-weight:700">⬇ Cliff #1</span>
+                <span></span>
+                <span style="color:var(--red);font-weight:700">⬇ Cliff #2</span>
+                <span>Lv N</span>
+            </div>
+        </div>
+
+        <div class="field-map">
+            <div class="fm-box">
+                <div class="fm-label">Dimension (X-Axis)</div>
+                <div class="fm-value"><code>level_number</code><br>Continuous, ascending 1→N</div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Metric (Y-Axis)</div>
+                <div class="fm-value"><code>completion_rate</code><br>Format: % (0-100%). Bar height = % user base</div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Tooltip (hover info)</div>
+                <div class="fm-value"><code>users_completed</code> <code>total_users</code> <code>avg_attempts</code><br>Hiện số tuyệt đối khi hover</div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Conditional Color</div>
+                <div class="fm-value">
+                    Bars có <code>drop_rate > threshold</code> → tô <strong style="color:var(--red)">đỏ</strong><br>
+                    Normal bars → <strong style="color:var(--blue)">xanh dương</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="fm-box fm-full" style="background:var(--red-s);border-color:rgba(248,113,113,.2)">
+            <div class="fm-label" style="color:var(--red)">Looker Studio Setup Tip</div>
+            <div class="fm-value">
+                Trong Looker Studio: Add Chart → <strong>Bar Chart</strong>. Dimension = level_number. Metric = completion_rate.
+                Bật <strong>"Conditional formatting"</strong> → rule: nếu bar value giảm >15% so với bar trước → highlight đỏ.
+                Nếu >100 levels, thêm <strong>Slider Filter</strong> cho level_number để zoom vào từng range.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ──────────── CHART 2 ──────────── -->
+<div class="chart-card">
+    <div class="cc-header">
+        <div class="cc-badge">
+            <div class="cc-num" style="background:var(--orange);color:#1a1e2a">C2</div>
+            <div>
+                <div class="cc-title">Drop Rate per Level (Spike Detector)</div>
+                <div class="cc-chart-type">Bar Chart (Vertical, pos/neg) hoặc Column Chart — Chart phát hiện spike</div>
+            </div>
+        </div>
+        <span class="cc-priority pri-must">MUST-HAVE</span>
+    </div>
+    <div class="cc-body">
+        <div class="cc-desc">
+            <strong>Mục đích:</strong> Chart 1 cho thấy funnel shape, Chart 2 này <strong>highlight chính xác spike drop</strong> ở từng level. Mỗi bar = lượng user bị mất giữa level N-1 và N. Bar cao = drop lớn. <strong>Đây là chart giúp bạn "gọi tên" problem levels ngay lập tức.</strong>
+        </div>
+
+        <!-- Wireframe -->
+        <div class="wf-mockup">
+            <div class="wf-mockup-label">Visual Preview — Spike trực quan</div>
+            <div class="mock-bars" style="height:100px;align-items:flex-end;">
+                <div class="mock-bar normal" style="height:15%"></div>
+                <div class="mock-bar normal" style="height:12%"></div>
+                <div class="mock-bar normal" style="height:18%"></div>
+                <div class="mock-bar normal" style="height:10%"></div>
+                <div class="mock-bar normal" style="height:8%"></div>
+                <div class="mock-bar normal" style="height:12%"></div>
+                <div class="mock-bar normal" style="height:9%"></div>
+                <div class="mock-bar normal" style="height:7%"></div>
+                <div class="mock-bar normal" style="height:6%"></div>
+                <div class="mock-bar normal" style="height:10%"></div>
+                <div class="mock-bar drop" style="height:85%"></div>
+                <div class="mock-bar normal" style="height:8%"></div>
+                <div class="mock-bar normal" style="height:6%"></div>
+                <div class="mock-bar normal" style="height:5%"></div>
+                <div class="mock-bar normal" style="height:7%"></div>
+                <div class="mock-bar normal" style="height:4%"></div>
+                <div class="mock-bar normal" style="height:5%"></div>
+                <div class="mock-bar spike" style="height:55%"></div>
+                <div class="mock-bar normal" style="height:4%"></div>
+                <div class="mock-bar normal" style="height:3%"></div>
+                <div class="mock-bar normal" style="height:5%"></div>
+                <div class="mock-bar drop" style="height:68%"></div>
+                <div class="mock-bar normal" style="height:4%"></div>
+                <div class="mock-bar normal" style="height:3%"></div>
+            </div>
+            <div class="mock-x">
+                <span>Lv 1</span>
+                <span style="color:var(--red);font-weight:700">🔺 Spike tại đây</span>
+                <span style="color:var(--orange);font-weight:700">🔺 Spike #2</span>
+                <span style="color:var(--red);font-weight:700">🔺 #3</span>
+                <span>Lv N</span>
+            </div>
+        </div>
+
+        <div class="field-map">
+            <div class="fm-box">
+                <div class="fm-label">Dimension (X-Axis)</div>
+                <div class="fm-value"><code>level_number</code><br>Continuous, 1→N (giống Chart 1)</div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Metric (Y-Axis) — Calculated Field</div>
+                <div class="fm-value">
+                    <code>drop_rate</code> = completion_rate[N-1] − completion_rate[N]<br>
+                    Bar cao hơn = nhiều user bị mất hơn
+                </div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Conditional Formatting</div>
+                <div class="fm-value">
+                    <code>drop_rate > AVG(drop_rate) × 2</code> → <strong style="color:var(--red)">Đỏ (Severe drop)</strong><br>
+                    <code>drop_rate > AVG(drop_rate) × 1.5</code> → <strong style="color:var(--orange)">Cam (Warning)</strong><br>
+                    Còn lại → <strong style="color:var(--blue)">Xanh (Normal attrition)</strong>
+                </div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Reference Line</div>
+                <div class="fm-value">
+                    Thêm <strong>horizontal line</strong> tại <code>AVG(drop_rate)</code> = mức drop trung bình<br>
+                    Bar vượt qua line = anomaly cần investigate
+                </div>
+            </div>
+        </div>
+
+        <div class="fm-box fm-full" style="background:var(--orange-s);border-color:rgba(251,191,36,.2)">
+            <div class="fm-label" style="color:var(--orange)">Tại sao Chart 2 quan trọng hơn Chart 1?</div>
+            <div class="fm-value">
+                Chart 1 cho thấy "hình dạng" funnel — mọi game đều có funnel giảm dần, nên khó phân biệt normal attrition vs abnormal drop.
+                <strong>Chart 2 loại bỏ trend tự nhiên</strong> — chỉ hiển thị mức drop tại từng level, nên spike trở nên rõ ràng ngay lập tức.
+                Giống việc nhìn đường giá vs nhìn % change — % change cho thấy anomaly nhanh hơn nhiều.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ──────────── CHART 3 ──────────── -->
+<div class="chart-card">
+    <div class="cc-header">
+        <div class="cc-badge">
+            <div class="cc-num" style="background:var(--purple);color:#1a1e2a">C3</div>
+            <div>
+                <div class="cc-title">Difficulty Quadrant Matrix (Attempts × Completion)</div>
+                <div class="cc-chart-type">Scatter Plot — Deep-dive chart phân loại level</div>
+            </div>
+        </div>
+        <span class="cc-priority pri-high">HIGH PRIORITY</span>
+    </div>
+    <div class="cc-body">
+        <div class="cc-desc">
+            <strong>Mục đích:</strong> Sau khi tìm được spike ở Chart 2, chart này phân loại level thành 4 nhóm để xác định <strong>nguyên nhân gốc rễ</strong> — level khó nhưng fair (good challenge) vs level khó và unfair (frustration wall). Mỗi dot = 1 level.
+        </div>
+
+        <!-- Wireframe quadrant -->
+        <div class="wf-mockup">
+            <div class="wf-mockup-label">Quadrant Framework — 4 loại level</div>
+            <div class="quad-grid">
+                <div class="quad quad-tl">
+                    <div>⚠️ <strong>FRUSTRATION WALL</strong><br><span style="font-size:9px;color:var(--text-m)">High attempts + Low completion<br>→ User cố gắng nhưng vẫn fail → BỎ GAME</span></div>
+                </div>
+                <div class="quad quad-tr">
+                    <div>✅ <strong>GOOD CHALLENGE</strong><br><span style="font-size:9px;color:var(--text-m)">High attempts + High completion<br>→ Khó nhưng user persist → SENSE OF ACHIEVEMENT</span></div>
+                </div>
+                <div class="quad quad-bl">
+                    <div>❌ <strong>INSTANT QUIT</strong><br><span style="font-size:9px;color:var(--text-m)">Low attempts + Low completion<br>→ User không thèm thử → CONFUSING DESIGN</span></div>
+                </div>
+                <div class="quad quad-br">
+                    <div>😴 <strong>TOO EASY</strong><br><span style="font-size:9px;color:var(--text-m)">Low attempts + High completion<br>→ Qua nhanh, không có challenge → BORING</span></div>
+                </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-d);margin-top:4px;padding:0 4px;">
+                <span>← Low completion_rate</span>
+                <span>High completion_rate →</span>
+            </div>
+            <div style="position:absolute;right:-4px;top:40px;transform:rotate(90deg);font-size:9px;color:var(--text-d)">↑ High avg_attempts</div>
+        </div>
+
+        <div class="field-map">
+            <div class="fm-box">
+                <div class="fm-label">X-Axis</div>
+                <div class="fm-value"><code>completion_rate</code><br>Low (trái) → High (phải)</div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Y-Axis</div>
+                <div class="fm-value"><code>avg_attempts</code><br>Low (dưới) → High (trên)</div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Bubble Size</div>
+                <div class="fm-value"><code>users_completed</code><br>Dot lớn = nhiều user = impact lớn hơn</div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Label / Color</div>
+                <div class="fm-value"><code>level_number</code> làm label<br>Color theo quadrant: đỏ (frustration), xanh (good), cam (quit), xám (easy)</div>
+            </div>
+        </div>
+
+        <div class="fm-box fm-full" style="background:var(--purple-s);border-color:rgba(167,139,250,.2)">
+            <div class="fm-label" style="color:var(--purple)">Cách đọc kết quả</div>
+            <div class="fm-value">
+                <strong>Ưu tiên fix: góc trên-trái (Frustration Wall)</strong> — đây là levels đang đuổi user đi tích cực nhất.<br>
+                <strong>Góc dưới-trái (Instant Quit)</strong> cũng cần fix nhưng khác cách: không phải nerf difficulty, mà cần redesign level layout/tutorial.<br>
+                Levels ở <strong>góc trên-phải (Good Challenge)</strong>: GIỮNGUYÊN — đây là điểm highlight của game.<br>
+                Levels ở <strong>góc dưới-phải (Too Easy)</strong>: có thể tăng nhẹ difficulty nếu cần kéo dài playtime.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ──────────── CHART 4 ──────────── -->
+<div class="chart-card">
+    <div class="cc-header">
+        <div class="cc-badge">
+            <div class="cc-num" style="background:var(--blue);color:#1a1e2a">C4</div>
+            <div>
+                <div class="cc-title">Difficulty Overlay (Drop Rate + Attempts + Score)</div>
+                <div class="cc-chart-type">Combo Chart (Bar + Line + Line) — Multi-metric overlay trên cùng X-axis</div>
+            </div>
+        </div>
+        <span class="cc-priority pri-high">HIGH PRIORITY</span>
+    </div>
+    <div class="cc-body">
+        <div class="cc-desc">
+            <strong>Mục đích:</strong> Xếp 3 metrics lên cùng trục level_number để tìm <strong>correlation</strong>: drop rate cao + attempts cao + score thấp tại cùng 1 level = confirmed difficulty wall. Nếu drop cao nhưng attempts thấp = user quit ngay, không phải vì khó.
+        </div>
+
+        <div class="field-map">
+            <div class="fm-box fm-full">
+                <div class="fm-label">Dimension (X-Axis chung)</div>
+                <div class="fm-value"><code>level_number</code> — continuous, 1→N</div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Metric 1 — Bar (Primary)</div>
+                <div class="fm-value">
+                    <code>drop_rate</code> (calculated)<br>
+                    Bar chart, trục trái<br>
+                    Color: đỏ khi > threshold
+                </div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Metric 2 — Line (Secondary axis)</div>
+                <div class="fm-value">
+                    <code>avg_attempts</code><br>
+                    Line chart, trục phải<br>
+                    Color: cam
+                </div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Metric 3 — Line (Secondary axis)</div>
+                <div class="fm-value">
+                    <code>avg_best_score</code><br>
+                    Line chart, trục phải (hoặc ẩn axis)<br>
+                    Color: tím nhạt, dashed
+                </div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Reference Lines</div>
+                <div class="fm-value">
+                    Line ngang tại <code>AVG(drop_rate)</code><br>
+                    Line ngang tại <code>AVG(avg_attempts)</code>
+                </div>
+            </div>
+        </div>
+
+        <div class="fm-box fm-full" style="background:var(--blue-s);border-color:rgba(96,165,250,.2)">
+            <div class="fm-label" style="color:var(--blue)">Pattern cần tìm</div>
+            <div class="fm-value">
+                <strong>Pattern A — Confirmed Difficulty Wall:</strong> Drop bar cao + Attempts line cũng spike + Score line dip → Level quá khó, user vật lộn rồi bỏ<br>
+                <strong>Pattern B — Design/UX Issue:</strong> Drop bar cao + Attempts line THẤP + Score không relevant → User bỏ ngay mà không thử → vấn đề không phải difficulty mà là confusion/UX<br>
+                <strong>Pattern C — Natural Attrition:</strong> Drop bar vừa phải + Attempts & Score stable → Normal funnel decay, không cần action
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ──────────── CHART 5 ──────────── -->
+<div class="chart-card">
+    <div class="cc-header">
+        <div class="cc-badge">
+            <div class="cc-num" style="background:var(--teal);color:#1a1e2a">C5</div>
+            <div>
+                <div class="cc-title">Content Pacing Curve</div>
+                <div class="cc-chart-type">Area Chart — Thời gian progression theo level</div>
+            </div>
+        </div>
+        <span class="cc-priority pri-rec">RECOMMENDED</span>
+    </div>
+    <div class="cc-body">
+        <div class="cc-desc">
+            <strong>Mục đích:</strong> Xem user mất bao nhiêu ngày để đến mỗi level. Curve lý tưởng = <strong>logarithmic</strong> (ban đầu nhanh, sau đó chậm dần đều). Nếu có "bậc thang" đột ngột = user bị stuck quá lâu tại level đó → pacing bottleneck.
+        </div>
+
+        <div class="field-map">
+            <div class="fm-box">
+                <div class="fm-label">Dimension (X-Axis)</div>
+                <div class="fm-value"><code>level_number</code><br>1→N</div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Metric (Y-Axis)</div>
+                <div class="fm-value">
+                    <code>avg_days_to_complete</code><br>
+                    Area fill giúp thấy rõ "bậc thang"
+                </div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Secondary Metric (optional)</div>
+                <div class="fm-value">
+                    <code>pacing_gap</code> (calculated) = days[N] - days[N-1]<br>
+                    Line overlay — spike = bottleneck
+                </div>
+            </div>
+            <div class="fm-box">
+                <div class="fm-label">Annotation</div>
+                <div class="fm-value">
+                    Mark milestone levels (10, 20, 50, 100)<br>
+                    Note expected pacing tại mỗi milestone
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ──────────── CHART 6 ──────────── -->
+<div class="chart-card">
+    <div class="cc-header">
+        <div class="cc-badge">
+            <div class="cc-num" style="background:var(--green);color:#1a1e2a">C6</div>
+            <div>
+                <div class="cc-title">Top Problem Levels — Ranked Table</div>
+                <div class="cc-chart-type">Table with Bar Indicators — Summary dạng bảng để brief trực tiếp cho GD team</div>
+            </div>
+        </div>
+        <span class="cc-priority pri-rec">RECOMMENDED</span>
+    </div>
+    <div class="cc-body">
+        <div class="cc-desc">
+            <strong>Mục đích:</strong> Bảng tổng hợp top 10-15 "worst offender levels" — sort theo <code>difficulty_index</code> giảm dần. Đây là bảng bạn <strong>gửi thẳng cho Game Design team</strong> để họ biết cần fix level nào trước.
+        </div>
+
+        <div class="field-map">
+            <div class="fm-box fm-full">
+                <div class="fm-label">Table Columns (trái → phải)</div>
+                <div class="fm-value" style="line-height:2;">
+                    <code>level_number</code> — Level #, sort primary<br>
+                    <code>completion_rate</code> — % user base qua level (format: %, bar indicator)<br>
+                    <code>drop_rate</code> — % drop so với level trước (format: %, <strong style="color:var(--red)">highlight đỏ</strong> nếu > threshold)<br>
+                    <code>avg_attempts</code> — Trung bình lần thử (bar indicator, cam nếu > 2×median)<br>
+                    <code>avg_best_score</code> — Score trung bình<br>
+                    <code>avg_days_to_complete</code> — Thời gian đến level<br>
+                    <code>difficulty_index</code> — Composite score (sort column, <strong style="color:var(--red)">highlight top 5</strong>)<br>
+                    <strong style="color:var(--purple)">Quadrant Label</strong> — "Frustration Wall" / "Instant Quit" / "Good Challenge" (tự classify)
+                </div>
+            </div>
+        </div>
+
+        <div class="fm-box fm-full" style="background:var(--green-s);border-color:rgba(52,211,153,.2)">
+            <div class="fm-label" style="color:var(--green)">Output cho Game Design team</div>
+            <div class="fm-value">
+                Bảng này chính là <strong>deliverable</strong> gửi cho GD team. Filter: chỉ show levels có <code>difficulty_index > P75</code> (top 25% khó nhất).
+                Thêm column "Suggested Action" nếu muốn: Nerf / Redesign / Add Hint / Monitor.
+                Export dạng CSV/PDF từ Looker Studio → attach vào Jira/Asana task cho GD team.
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ROOT CAUSE ANALYSIS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="sec-head">
+        <div class="sec-icon" style="background:var(--red-s);color:var(--red)">🔍</div>
+        <div class="sec-title" style="color:var(--red)">Root-Cause Analysis Framework</div>
+    </div>
+    <div class="sec-sub">Sau khi xác định level có drop cao, dùng framework sau để chẩn đoán nguyên nhân gốc rễ</div>
+
+    <div class="rc-grid">
+        <div class="rc-card">
+            <h4 style="color:var(--red)">Root Cause 1: Difficulty Spike</h4>
+            <p><strong>Triệu chứng:</strong> Drop rate cao + avg_attempts cao + avg_best_score thấp tại cùng level</p>
+            <p style="margin-top:8px"><strong>Nguyên nhân:</strong> Level quá khó so với level trước — jump in difficulty không smooth. Board layout phức tạp đột ngột, số màu tăng, moves giảm quá nhiều.</p>
+            <div class="rc-signal" style="background:var(--red-s);color:var(--red)">
+                Signal: avg_attempts > 2× median<br>
+                AND drop_rate > AVG × 2<br>
+                AND avg_best_score dip
+            </div>
+        </div>
+
+        <div class="rc-card">
+            <h4 style="color:var(--orange)">Root Cause 2: RNG / Unfair Design</h4>
+            <p><strong>Triệu chứng:</strong> Drop rate cao + avg_attempts vừa + score distribution rất hẹp (mọi user score gần nhau nhưng vẫn fail)</p>
+            <p style="margin-top:8px"><strong>Nguyên nhân:</strong> Level phụ thuộc RNG quá cao — board random không có đủ "winnable" configurations. User skill không giúp ích → frustrating.</p>
+            <div class="rc-signal" style="background:var(--orange-s);color:var(--orange)">
+                Signal: drop_rate cao<br>
+                BUT avg_attempts moderate (1.5-3x)<br>
+                AND score spread hẹp (Q75-Q25 nhỏ)
+            </div>
+        </div>
+
+        <div class="rc-card">
+            <h4 style="color:var(--purple)">Root Cause 3: Confusion / UX Gap</h4>
+            <p><strong>Triệu chứng:</strong> Drop rate cao + avg_attempts RẤT THẤP (user quit mà không thử) + level thường ở giai đoạn sớm (1-15)</p>
+            <p style="margin-top:8px"><strong>Nguyên nhân:</strong> Level giới thiệu mechanic mới nhưng không có tutorial. User không hiểu phải làm gì → bỏ ngay. Hoặc UI/board confusing.</p>
+            <div class="rc-signal" style="background:var(--purple-s);color:var(--purple)">
+                Signal: drop_rate cao<br>
+                BUT avg_attempts < median<br>
+                AND level_number < 15-20
+            </div>
+        </div>
+
+        <div class="rc-card">
+            <h4 style="color:var(--blue)">Root Cause 4: Content Fatigue</h4>
+            <p><strong>Triệu chứng:</strong> Drop rate tăng dần đều ở mid-to-late game + avg_attempts normal + pacing_gap tăng</p>
+            <p style="margin-top:8px"><strong>Nguyên nhân:</strong> Gameplay lặp lại — không có mechanic mới, visual variety giảm, reward cycle không đủ hấp dẫn. User hết motivation chứ không phải hết skill.</p>
+            <div class="rc-signal" style="background:var(--blue-s);color:var(--blue)">
+                Signal: drop_rate tăng dần (không spike)<br>
+                AND avg_attempts stable<br>
+                AND avg_days_to_complete gap tăng
+            </div>
+        </div>
+
+        <div class="rc-card">
+            <h4 style="color:var(--pink)">Root Cause 5: Paywall Friction</h4>
+            <p><strong>Triệu chứng:</strong> Drop spike tại level specific = level đầu tiên yêu cầu IAP/extra moves/lives. Chỉ non-payer drop, payer pass through.</p>
+            <p style="margin-top:8px"><strong>Nguyên nhân:</strong> Paywall đặt quá sớm hoặc quá aggressive. User chưa đủ invested để trả tiền → bỏ game thay vì mua.</p>
+            <div class="rc-signal" style="background:var(--pink-s);color:var(--pink)">
+                Signal: drop_rate spike tại 1 level cụ thể<br>
+                AND level trùng với IAP trigger point<br>
+                Cross-ref: mart_player_segments
+            </div>
+        </div>
+
+        <div class="rc-card">
+            <h4 style="color:var(--teal)">Root Cause 6: Technical Issue</h4>
+            <p><strong>Triệu chứng:</strong> Drop spike đột ngột tại 1 level + không correlate với difficulty metrics + có thể platform-specific</p>
+            <p style="margin-top:8px"><strong>Nguyên nhân:</strong> Bug, crash, loading issue tại level cụ thể. Thường xảy ra sau update version. Need cross-check với crash logs.</p>
+            <div class="rc-signal" style="background:var(--teal-s);color:var(--teal)">
+                Signal: drop_rate spike<br>
+                BUT avg_attempts normal & score normal<br>
+                AND possibly platform-specific
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ACTION PLAN -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="sec-head">
+        <div class="sec-icon" style="background:var(--green-s);color:var(--green)">✅</div>
+        <div class="sec-title" style="color:var(--green)">Action Plan cho Game Design Team</div>
+    </div>
+    <div class="sec-sub">Mapping: Root Cause → Hành động cụ thể → Metric đo lường kết quả</div>
+
+    <div style="overflow-x:auto;">
+        <table class="action-table">
+            <thead>
+                <tr>
+                    <th>Root Cause</th>
+                    <th>Action cho GD Team</th>
+                    <th>Priority</th>
+                    <th>Metric đo kết quả</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="color:var(--red);font-weight:500">Difficulty Spike</td>
+                    <td>
+                        <span class="action-tag at-nerf">NERF</span> Giảm difficulty: tăng max moves +2-3, giảm số màu -1, hoặc mở rộng board size<br>
+                        <span class="action-tag at-add">ADD</span> Thêm hint system tại level khó: gợi ý nước đi đầu tiên<br>
+                        <span class="action-tag at-tune">TUNE</span> Chèn 1-2 "breather levels" dễ trước cliff level
+                    </td>
+                    <td><strong style="color:var(--red)">P0 — Ngay</strong></td>
+                    <td>completion_rate tại level đó tăng >10%<br>avg_attempts giảm về < 2× median<br>drop_rate giảm về < AVG × 1.5</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--orange);font-weight:500">RNG / Unfair</td>
+                    <td>
+                        <span class="action-tag at-nerf">REDESIGN</span> Regenerate board seed pool — đảm bảo >80% configurations là winnable<br>
+                        <span class="action-tag at-add">ADD</span> "Shuffle" button: cho user reset board 1 lần miễn phí<br>
+                        <span class="action-tag at-test">A/B TEST</span> Test board generation algorithm mới
+                    </td>
+                    <td><strong style="color:var(--orange)">P1 — Sprint tới</strong></td>
+                    <td>Score spread (Q75-Q25) tăng<br>avg_attempts giảm<br>completion_rate tăng</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--purple);font-weight:500">Confusion / UX</td>
+                    <td>
+                        <span class="action-tag at-add">ADD</span> Tutorial popup khi user gặp mechanic mới lần đầu<br>
+                        <span class="action-tag at-tune">IMPROVE</span> Visual clarity: highlight area cần flood, arrows chỉ direction<br>
+                        <span class="action-tag at-test">A/B TEST</span> So sánh có tutorial vs không tutorial
+                    </td>
+                    <td><strong style="color:var(--orange)">P1 — Sprint tới</strong></td>
+                    <td>avg_attempts tại level đó tăng (user thử nhiều hơn thay vì quit)<br>drop_rate giảm<br>D1 retention cải thiện</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--blue);font-weight:500">Content Fatigue</td>
+                    <td>
+                        <span class="action-tag at-add">ADD</span> Mechanic mới mỗi 15-20 levels: new board shape, power-ups, time challenge<br>
+                        <span class="action-tag at-add">ADD</span> Visual theme refresh mỗi chapter (10 levels)<br>
+                        <span class="action-tag at-tune">TUNE</span> Reward curve: bigger reward milestones mỗi 20 levels
+                    </td>
+                    <td><strong style="color:var(--blue)">P2 — Backlog</strong></td>
+                    <td>D7→D14 retention cải thiện<br>avg_levels_per_session stable<br>pacing_gap không tăng</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--pink);font-weight:500">Paywall Friction</td>
+                    <td>
+                        <span class="action-tag at-tune">MOVE</span> Dời paywall trigger sang level cao hơn (sau khi user invested)<br>
+                        <span class="action-tag at-add">ADD</span> "Soft paywall" thay vì hard block: rewarded video ad để có extra moves<br>
+                        <span class="action-tag at-test">A/B TEST</span> Paywall position: level X vs level X+5 vs level X+10
+                    </td>
+                    <td><strong style="color:var(--orange)">P1 — Sprint tới</strong></td>
+                    <td>drop_rate tại paywall level giảm<br>payer_conversion_rate tăng<br>D7 retention cải thiện</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--teal);font-weight:500">Technical Issue</td>
+                    <td>
+                        <span class="action-tag at-monitor">INVESTIGATE</span> Cross-check crash logs tại level đó<br>
+                        <span class="action-tag at-nerf">FIX</span> Hotfix nếu confirm bug<br>
+                        <span class="action-tag at-monitor">MONITOR</span> Platform-specific crash rate dashboard
+                    </td>
+                    <td><strong style="color:var(--red)">P0 — Hotfix</strong></td>
+                    <td>Crash rate = 0 tại level<br>drop_rate normalize<br>Platform-specific drop eliminated</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SUMMARY: CHART → QUESTION MAPPING -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="sec-head">
+        <div class="sec-icon" style="background:rgba(228,231,240,.06);color:var(--text)">📋</div>
+        <div class="sec-title">Quick Reference — Chart Reading Flow</div>
+    </div>
+
+    <div style="overflow-x:auto;">
+        <table class="action-table">
+            <thead>
+                <tr>
+                    <th>Step</th>
+                    <th>Chart</th>
+                    <th>Bạn đang tìm gì?</th>
+                    <th>Nếu thấy anomaly → Tiếp theo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="color:var(--red);font-weight:700">1</td>
+                    <td><strong>C1</strong> — Level Completion Funnel</td>
+                    <td>Hình dạng funnel tổng thể. Có "cliff" rõ ràng không?</td>
+                    <td>Thấy cliff → Zoom vào C2 để xem drop cụ thể</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--orange);font-weight:700">2</td>
+                    <td><strong>C2</strong> — Drop Rate Spike Detector</td>
+                    <td>Level NÀO drop nhiều nhất? Bar nào vượt reference line?</td>
+                    <td>Ghi lại level numbers → Tra C3 để phân loại nguyên nhân</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--purple);font-weight:700">3</td>
+                    <td><strong>C3</strong> — Difficulty Quadrant</td>
+                    <td>Level drop thuộc quadrant nào? Frustration vs Confusion vs Quit?</td>
+                    <td>Theo quadrant → Áp root cause tương ứng</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--blue);font-weight:700">4</td>
+                    <td><strong>C4</strong> — Multi-metric Overlay</td>
+                    <td>Drop có correlate với attempts & score không? Pattern A, B, hay C?</td>
+                    <td>Confirm root cause → Chọn action từ Action Plan</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--teal);font-weight:700">5</td>
+                    <td><strong>C5</strong> — Pacing Curve</td>
+                    <td>User bị stuck bao lâu? Có pacing bottleneck không?</td>
+                    <td>Bottleneck → Thêm content/events tại vùng đó</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--green);font-weight:700">6</td>
+                    <td><strong>C6</strong> — Problem Levels Table</td>
+                    <td>Top N worst levels, ranked. Export → gửi GD team</td>
+                    <td>GD team tạo Jira tickets cho từng level cần fix</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="footer">
+    Flood-It — Level Drop Rate Diagnostic Analysis &bull; 6 Charts + 6 Root Causes + Action Plan &bull; Source: mart_level_funnel
+</div>
+
+</body>
+</html>
